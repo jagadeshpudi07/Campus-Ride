@@ -1,0 +1,555 @@
+<!-- ============================================================
+     CINEMATIC INTRO
+     ============================================================ -->
+<div id="intro">
+  <canvas id="routeCanvas"></canvas>
+  <div class="intro-fog"></div>
+  <div class="intro-center" id="introCenter">
+    <div class="loader-card">
+      <div class="loader">
+        <p>Campus</p>
+        <div class="words">
+          <span class="word">Ride</span>
+          <span class="word">Smart</span>
+          <span class="word">Safe</span>
+          <span class="word">Fast</span>
+          <span class="word">Green</span>
+          <span class="word">Better</span>
+          <span class="word">Cheaper</span>
+          <span class="word">Ride</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="intro-scroll" id="introScroll">
+    <span>scroll</span>
+    <div class="scroll-chevron"></div>
+  </div>
+</div>
+
+<!-- ============================================================
+     MAIN APP
+     ============================================================ -->
+<div id="app">
+
+  <!-- NAV -->
+  <nav id="mainNav" class="liquid-glass">
+    <div class="nav-container">
+      <a class="nav-brand" href="#"><em>Campus</em>Ride</a>
+      <ul class="nav-links">
+        <li><a href="#features">Features</a></li>
+        <li><a href="#how-it-works">How it Works</a></li>
+        <li><a href="#search-section">Find Ride</a></li>
+      </ul>
+      <label class="nav-hamburger" id="navHamburger" onclick="toggleMobileNav()">
+        <input type="checkbox" id="navCheckbox">
+        <svg viewBox="0 0 32 32">
+          <path class="line line-top-bottom" d="M27 10 13 10C10.8 10 9 8.2 9 6 9 3.5 10.8 2 13 2 15.2 2 17 3.8 17 6L17 26C17 28.2 18.8 30 21 30 23.2 30 25 28.2 25 26 25 23.8 23.2 22 21 22L7 22"></path>
+          <path class="line" d="M7 16 27 16"></path>
+        </svg>
+      </label>
+      <div class="nav-actions">
+        <label class="theme-switch">
+          <input type="checkbox" class="theme-switch__checkbox" id="themeToggle">
+          <div class="theme-switch__container">
+            <div class="theme-switch__clouds"></div>
+            <div class="theme-switch__stars-container">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 144 55" fill="none">
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M135.831 3.00688C135.055 3.85027 134.111 4.29946 133 4.35447C134.111 4.40947 135.055 4.85867 135.831 5.71123C136.607 6.55462 136.996 7.56303 136.996 8.72727C136.996 7.95722 137.172 7.25134 137.525 6.59129C137.886 5.93124 138.372 5.39954 138.98 5.00535C139.598 4.60199 140.268 4.39114 141 4.35447C139.88 4.2903 138.936 3.85027 138.16 3.00688C137.384 2.16348 136.996 1.16425 136.996 0C136.996 1.16425 136.607 2.16348 135.831 3.00688ZM31 23.3545C32.1114 23.2995 33.0551 22.8503 33.8313 22.0069C34.6075 21.1635 34.9956 20.1642 34.9956 19C34.9956 20.1642 35.3837 21.1635 36.1599 22.0069C36.9361 22.8503 37.8798 23.2903 39 23.3545C38.2679 23.3911 37.5976 23.602 36.9802 24.0053C36.3716 24.3995 35.8864 24.9312 35.5248 25.5913C35.172 26.2513 34.9956 26.9572 34.9956 27.7273C34.9956 26.563 34.6075 25.5546 33.8313 24.7112C33.0551 23.8587 32.1114 23.4095 31 23.3545ZM0 36.3545C1.11136 36.2995 2.05513 35.8503 2.83131 35.0069C3.6075 34.1635 3.99559 33.1642 3.99559 32C3.99559 33.1642 4.38368 34.1635 5.15987 35.0069C5.93605 35.8503 6.87982 36.2903 8 36.3545C7.26792 36.3911 6.59757 36.602 5.98015 37.0053C5.37155 37.3995 4.88644 37.9312 4.52481 38.5913C4.172 39.2513 3.99559 39.9572 3.99559 40.7273C3.99559 39.563 3.6075 38.5546 2.83131 37.7112C2.05513 36.8587 1.11136 36.4095 0 36.3545ZM56.8313 24.0069C56.0551 24.8503 55.1114 25.2995 54 25.3545C55.1114 25.4095 56.0551 25.8587 56.8313 26.7112C57.6075 27.5546 57.9956 28.563 57.9956 29.7273C57.9956 28.9572 58.172 28.2513 58.5248 27.5913C58.8864 26.9312 59.3716 26.3995 59.9802 26.0053C60.5976 25.602 61.2679 25.3911 62 25.3545C60.8798 25.2903 59.9361 24.8503 59.1599 24.0069C58.3837 23.1635 57.9956 22.1642 57.9956 21C57.9956 22.1642 57.6075 23.1635 56.8313 24.0069ZM81 25.3545C82.1114 25.2995 83.0551 24.8503 83.8313 24.0069C84.6075 23.1635 84.9956 22.1642 84.9956 21C84.9956 22.1642 85.3837 23.1635 86.1599 24.0069C86.9361 24.8503 87.8798 25.2903 89 25.3545C88.2679 25.3911 87.5976 25.602 86.9802 26.0053C86.3716 26.3995 85.8864 26.9312 85.5248 27.5913C85.172 28.2513 84.9956 28.9572 84.9956 29.7273C84.9956 28.563 84.6075 27.5546 83.8313 26.7112C83.0551 25.8587 82.1114 25.4095 81 25.3545ZM136 36.3545C137.111 36.2995 138.055 35.8503 138.831 35.0069C139.607 34.1635 139.996 33.1642 139.996 32C139.996 33.1642 140.384 34.1635 141.16 35.0069C141.936 35.8503 142.88 36.2903 144 36.3545C143.268 36.3911 142.598 36.602 141.98 37.0053C141.372 37.3995 140.886 37.9312 140.525 38.5913C140.172 39.2513 139.996 39.9572 139.996 40.7273C139.996 39.563 139.607 38.5546 138.831 37.7112C138.055 36.8587 137.111 36.4095 136 36.3545ZM101.831 49.0069C101.055 49.8503 100.111 50.2995 99 50.3545C100.111 50.4095 101.055 50.8587 101.831 51.7112C102.607 52.5546 102.996 53.563 102.996 54.7273C102.996 53.9572 103.172 53.2513 103.525 52.5913C103.886 51.9312 104.372 51.3995 104.98 51.0053C105.598 50.602 106.268 50.3911 107 50.3545C105.88 50.2903 104.936 49.8503 104.16 49.0069C103.384 48.1635 102.996 47.1642 102.996 46C102.996 47.1642 102.607 48.1635 101.831 49.0069Z" fill="currentColor"></path>
+              </svg>
+            </div>
+            <div class="theme-switch__circle-container">
+              <div class="theme-switch__sun-moon-container">
+                <div class="theme-switch__moon">
+                  <div class="theme-switch__spot"></div>
+                  <div class="theme-switch__spot"></div>
+                  <div class="theme-switch__spot"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </label>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section id="hero">
+    <div class="hero-container">
+      <div class="hero-content reveal">
+        <div class="hero-pill">
+          <div class="hero-pill-dot"></div>
+          <span>Smart Campus Transportation Network</span>
+        </div>
+        <h1 class="hero-title">Travel <span class="grad">Smarter</span><br>to Your Campus</h1>
+        <p class="hero-desc">Save fuel, reduce costs, and share rides with nearby students. The intelligent carpool
+          network built for college life in Visakhapatnam.</p>
+        <div class="hero-btns">
+          <button class="btn btn-glow btn-lg" onclick="openAddRide()"><i class="fi fi-bs-plus"></i> Add Ride</button>
+          <button class="btn btn-ghost btn-lg" onclick="scrollToSection('search-section')"><i class="fi fi-bs-search"></i> Find a Ride</button>
+        </div>
+        <div class="hero-metrics">
+          <div class="metric">
+            <div class="metric-val" data-count="2400">0</div>
+            <div class="metric-label">Active Riders</div>
+          </div>
+          <div class="metric">
+            <div class="metric-val" data-prefix="₹" data-count="180">0</div>
+            <div class="metric-label">Avg. Monthly Savings</div>
+          </div>
+          <div class="metric">
+            <div class="metric-val" data-count="12" data-suffix="+">0</div>
+            <div class="metric-label">Campuses Covered</div>
+          </div>
+        </div>
+      </div>
+      <div class="hero-video-card">
+        <video autoplay muted loop playsinline>
+          <source src="hero-video.mp4" type="video/mp4">
+        </video>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section id="features">
+    <div class="section-container">
+      <div class="section-eyebrow reveal">Why CampusRide</div>
+      <h2 class="section-heading reveal r1">Everything you need<br>to ride smarter</h2>
+      <p class="section-sub reveal r2">A platform designed from the ground up for college students who want to save
+        money, time, and travel efficiently together.</p>
+      <div class="features-container">
+        <div class="features-grid">
+          <!-- Set 1 -->
+          <div class="feat-card">
+            <div class="feat-icon-wrap">🚗</div>
+            <div class="feat-name">Smart Ride Matching</div>
+            <div class="feat-desc">AI-powered matching connects you with the most compatible co-riders based on route,
+              timing, and preferences.</div>
+          </div>
+          <div class="feat-card">
+            <div class="feat-icon-wrap">🗺</div>
+            <div class="feat-name">Route Optimization</div>
+            <div class="feat-desc">Intelligent routing calculates the most efficient path, saving everyone fuel costs
+              and commute time.</div>
+          </div>
+          <div class="feat-card">
+            <div class="feat-icon-wrap">💸</div>
+            <div class="feat-name">Fair Cost Sharing</div>
+            <div class="feat-desc">Automatic cost calculation splits fuel and toll expenses fairly. Transparent pricing,
+              no surprises.</div>
+          </div>
+          <div class="feat-card">
+            <div class="feat-icon-wrap">🔐</div>
+            <div class="feat-name">Verified Students Only</div>
+            <div class="feat-desc">Every user verified with their college ID. Ride confidently in a trusted, closed
+              network of students.</div>
+          </div>
+          <div class="feat-card">
+            <div class="feat-icon-wrap">⚡</div>
+            <div class="feat-name">Real-Time Updates</div>
+            <div class="feat-desc">Live seat availability, location tracking, and instant notifications keep you
+              informed every step of the way.</div>
+          </div>
+          <!-- Set 2 -->
+          <div class="feat-card">
+            <div class="feat-icon-wrap">🚗</div>
+            <div class="feat-name">Smart Ride Matching</div>
+            <div class="feat-desc">AI-powered matching connects you with the most compatible co-riders based on route,
+              timing, and preferences.</div>
+          </div>
+          <div class="feat-card">
+            <div class="feat-icon-wrap">🗺</div>
+            <div class="feat-name">Route Optimization</div>
+            <div class="feat-desc">Intelligent routing calculates the most efficient path, saving everyone fuel costs
+              and commute time.</div>
+          </div>
+          <div class="feat-card">
+            <div class="feat-icon-wrap">💸</div>
+            <div class="feat-name">Fair Cost Sharing</div>
+            <div class="feat-desc">Automatic cost calculation splits fuel and toll expenses fairly. Transparent pricing,
+              no surprises.</div>
+          </div>
+          <div class="feat-card">
+            <div class="feat-icon-wrap">🔐</div>
+            <div class="feat-name">Verified Students Only</div>
+            <div class="feat-desc">Every user verified with their college ID. Ride confidently in a trusted, closed
+              network of students.</div>
+          </div>
+          <div class="feat-card">
+            <div class="feat-icon-wrap">⚡</div>
+            <div class="feat-name">Real-Time Updates</div>
+            <div class="feat-desc">Live seat availability, location tracking, and instant notifications keep you
+              informed every step of the way.</div>
+          </div>
+          <!-- Set 3 -->
+          <div class="feat-card">
+            <div class="feat-icon-wrap">🚗</div>
+            <div class="feat-name">Smart Ride Matching</div>
+            <div class="feat-desc">AI-powered matching connects you with the most compatible co-riders based on route,
+              timing, and preferences.</div>
+          </div>
+          <div class="feat-card">
+            <div class="feat-icon-wrap">🗺</div>
+            <div class="feat-name">Route Optimization</div>
+            <div class="feat-desc">Intelligent routing calculates the most efficient path, saving everyone fuel costs
+              and commute time.</div>
+          </div>
+          <div class="feat-card">
+            <div class="feat-icon-wrap">💸</div>
+            <div class="feat-name">Fair Cost Sharing</div>
+            <div class="feat-desc">Automatic cost calculation splits fuel and toll expenses fairly. Transparent pricing,
+              no surprises.</div>
+          </div>
+          <div class="feat-card">
+            <div class="feat-icon-wrap">🔐</div>
+            <div class="feat-name">Verified Students Only</div>
+            <div class="feat-desc">Every user verified with their college ID. Ride confidently in a trusted, closed
+              network of students.</div>
+          </div>
+          <div class="feat-card">
+            <div class="feat-icon-wrap">⚡</div>
+            <div class="feat-name">Real-Time Updates</div>
+            <div class="feat-desc">Live seat availability, location tracking, and instant notifications keep you
+              informed every step of the way.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section id="how-it-works">
+    <div class="section-eyebrow reveal">Simple Process</div>
+    <h2 class="section-heading reveal r1">Up and riding in<br>under 2 minutes</h2>
+    <div class="steps-grid">
+      <div class="step-item reveal r1">
+        <div class="step-num">01</div>
+        <div class="step-title">Search Your Route</div>
+        <div class="step-desc">Enter your pickup location and select your college destination.</div>
+      </div>
+      <div class="step-item reveal r2">
+        <div class="step-num">02</div>
+        <div class="step-title">Browse Rides</div>
+        <div class="step-desc">View matching rides with pricing, timing, vehicle type, and driver details.</div>
+      </div>
+      <div class="step-item reveal r3">
+        <div class="step-num">03</div>
+        <div class="step-title">Book Instantly</div>
+        <div class="step-desc">Select your preferred ride and confirm. Seat is reserved for you.</div>
+      </div>
+      <div class="step-item reveal r4">
+        <div class="step-num">04</div>
+        <div class="step-title">Ride Together</div>
+        <div class="step-desc">Meet at the pickup point, share the ride, and save money together.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SEARCH SECTION -->
+  <section id="search-section">
+    <div style="text-align:center;margin-bottom:44px">
+      <div class="section-eyebrow reveal">Find Your Ride</div>
+      <h2 class="section-heading reveal r1">Where are you<br>headed today?</h2>
+    </div>
+    <div class="search-wrapper reveal">
+      <div class="search-panel">
+        <div class="search-panel-title">Plan Your Ride</div>
+        <div>
+          <label class="input-label"><i class="fi fi-bs-marker"></i> From Address</label>
+          <div class="input-wrap">
+            <span class="input-ico"><i class="fi fi-bs-marker"></i></span>
+            <input class="s-input" id="fromInput" type="text" placeholder="e.g. MVP Colony, Visakhapatnam">
+          </div>
+          <button class="loc-btn" onclick="useCurrentLocation()"><i class="fi fi-bs-crosshairs"></i> Use Current Location</button>
+        </div>
+        <div>
+          <label class="input-label"><i class="fi fi-bs-graduation-cap"></i> To College</label>
+          <div class="chips" id="collegeChips">
+            <div class="chip" data-college="VIIT" onclick="selectCollege(this)">VIIT</div>
+            <div class="chip" data-college="GITAM" onclick="selectCollege(this)">GITAM</div>
+            <div class="chip" data-college="ANITS" onclick="selectCollege(this)">ANITS</div>
+            <div class="chip" data-college="Andhra University" onclick="selectCollege(this)">Andhra University</div>
+          </div>
+        </div>
+        <div>
+          <label class="input-label"><i class="fi fi-bs-clock"></i> Departure Time</label>
+          <div class="input-wrap">
+            <span class="input-ico"><i class="fi fi-bs-clock"></i></span>
+            <input class="s-input" id="timeInput" type="time" value="08:00" style="padding-left:42px">
+          </div>
+        </div>
+        <div>
+          <label class="input-label"><i class="fi fi-bs-car"></i> Vehicle Type</label>
+          <div class="chips">
+            <div class="chip" data-v="all" onclick="quickFilter(this)" id="qAll">All</div>
+            <div class="chip" data-v="bike" onclick="quickFilter(this)" id="qBike"><i class="fi fi-bs-biking"></i> Bike</div>
+            <div class="chip" data-v="car" onclick="quickFilter(this)" id="qCar"><i class="fi fi-bs-car"></i> Car</div>
+          </div>
+        </div>
+        <button class="btn btn-glow btn-search-effect" style="width:100%;justify-content:center" onclick="doSearch()">
+          <i class="fi fi-bs-search" style="margin-right:8px"></i> Search Rides
+        </button>
+      </div>
+      <div class="map-pane" id="mapPane">
+        <div id="heroMapEl2" style="width:100%;height:100%"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RESULTS SECTION -->
+  <section id="results-section">
+    <div class="results-grid">
+
+      <!-- FILTER PANEL -->
+      <div class="filter-card">
+        <div class="filter-head">
+          Filters
+          <button class="filter-clear" onclick="clearFilters()">Clear all</button>
+        </div>
+        <div class="filter-group">
+          <div class="fg-title">Vehicle Type</div>
+          <div class="f-opts">
+            <button class="f-btn on" data-fv="all" onclick="applyFilter('vehicle',this)">All</button>
+            <button class="f-btn" data-fv="bike" onclick="applyFilter('vehicle',this)"><i class="fi fi-bs-biking"></i> Bike</button>
+            <button class="f-btn" data-fv="car" onclick="applyFilter('vehicle',this)"><i class="fi fi-bs-car"></i> Car</button>
+          </div>
+        </div>
+        <div class="filter-group">
+          <div class="fg-title">Gender Preference</div>
+          <div class="f-opts">
+            <button class="f-btn on" data-fv="any" onclick="applyFilter('gender',this)">Any</button>
+            <button class="f-btn" data-fv="male" onclick="applyFilter('gender',this)">👨 Male</button>
+            <button class="f-btn" data-fv="female" onclick="applyFilter('gender',this)">👩 Female</button>
+          </div>
+        </div>
+        <div class="filter-group">
+          <div class="fg-title">Max Price (₹/seat)</div>
+          <input type="range" class="price-slider" id="priceSlider" min="20" max="200" value="200"
+            oninput="applyPriceFilter(this.value)">
+          <div class="price-labels">₹20 <strong id="priceVal">₹200</strong> ₹200+</div>
+        </div>
+        <div class="filter-group">
+          <div class="fg-title">Departure Time</div>
+          <div class="f-opts">
+            <button class="f-btn on" data-fv="any" onclick="applyFilter('time',this)">Any</button>
+            <button class="f-btn" data-fv="morning" onclick="applyFilter('time',this)">🌅 Morning</button>
+            <button class="f-btn" data-fv="afternoon" onclick="applyFilter('time',this)">☀️ Afternoon</button>
+          </div>
+        </div>
+        <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="openAddRide()">+ Add Your
+          Ride</button>
+      </div>
+
+      <!-- RESULTS RIGHT -->
+      <div class="results-right">
+        <div class="results-bar">
+          <div class="results-label">Showing <b id="resultsCount">0</b> rides</div>
+          <div style="display:flex;gap:8px;font-size:0.8rem;color:var(--text-muted)">
+            <span>Sort by:</span>
+            <select style="border:none;background:none;color:var(--primary);font-weight:600;cursor:pointer;outline:none"
+              onchange="sortRides(this.value)">
+              <option value="recommended">Recommended</option>
+              <option value="price_asc">Price ↑</option>
+              <option value="price_desc">Price ↓</option>
+              <option value="rating">Rating</option>
+            </select>
+          </div>
+        </div>
+        <div class="results-map-card">
+          <div id="resultsMapEl"></div>
+        </div>
+        <div class="rides-list" id="ridesList"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="section-container">
+      <div class="footer-top">
+        <div class="footer-brand footer-col">
+          <div class="logo"><em>Campus</em>Ride</div>
+          <p>The intelligent carpool network for Visakhapatnam's college community. Ride smarter, spend less, connect
+            more.</p>
+        </div>
+        <div class="footer-col">
+          <h4>Platform</h4>
+          <ul>
+            <li><a href="#">Find a Ride</a></li>
+            <li><a href="#">Add a Ride</a></li>
+            <li><a href="#">How it Works</a></li>
+            <li><a href="#">Safety</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Company</h4>
+          <ul>
+            <li><a href="#">About</a></li>
+            <li><a href="#">Blog</a></li>
+            <li><a href="#">Privacy Policy</a></li>
+            <li><a href="#">Terms of Service</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© 2026 CampusRide. All rights reserved.</span>
+        <div class="footer-badges">
+          <div class="f-badge">🔐 Verified Network</div>
+          <div class="f-badge">🌱 Eco-Friendly</div>
+          <div class="f-badge">⚡ Real-Time</div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+</div><!-- #app -->
+
+<!-- ============================================================
+     ADD RIDE MODAL
+     ============================================================ -->
+<div class="overlay" id="addRideOverlay">
+  <div class="modal-box">
+    <div class="modal-hd">
+      <div class="modal-title">Add Your Ride</div>
+      <button class="modal-close" onclick="closeModal('addRideOverlay')">✕</button>
+    </div>
+
+    <!-- Step Bar -->
+    <div class="step-bar" id="stepBar">
+      <div class="s-dot act" id="sd1">1</div>
+      <div class="s-line" id="sl1"></div>
+      <div class="s-dot" id="sd2">2</div>
+      <div class="s-line" id="sl2"></div>
+      <div class="s-dot" id="sd3">3</div>
+      <div class="s-line" id="sl3"></div>
+      <div class="s-dot" id="sd4">4</div>
+      <div class="s-line" id="sl4"></div>
+      <div class="s-dot" id="sd5">5</div>
+    </div>
+
+    <div class="modal-body">
+      <!-- Step 1: Vehicle Type -->
+      <div class="s-content act" id="sc1">
+        <div class="s-head">What are you offering?</div>
+        <div class="veh-grid">
+          <div class="veh-opt sel" id="vBike" onclick="selectVehicle('bike')">
+            <div class="veh-ico"><i class="fi fi-bs-biking"></i></div>
+            <div class="veh-lbl">Bike</div>
+          </div>
+          <div class="veh-opt" id="vCar" onclick="selectVehicle('car')">
+            <div class="veh-ico"><i class="fi fi-bs-car"></i></div>
+            <div class="veh-lbl">Car</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2: Route -->
+      <div class="s-content" id="sc2">
+        <div class="s-head">Set your route</div>
+        <div class="f-group">
+          <label class="f-label">📍 From Address</label>
+          <input class="f-input" id="addFrom" type="text" placeholder="Your pickup location">
+        </div>
+        <div class="f-group">
+          <label class="f-label">🎓 To College</label>
+          <select class="f-select" id="addCollege">
+            <option value="">Select college</option>
+            <option>VIIT</option>
+            <option>GITAM</option>
+            <option>ANITS</option>
+            <option>Andhra University</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Step 3: Details -->
+      <div class="s-content" id="sc3">
+        <div class="s-head">Ride details</div>
+        <div class="f-row">
+          <div class="f-group">
+            <label class="f-label">📅 Date</label>
+            <input class="f-input" id="addDate" type="date">
+          </div>
+          <div class="f-group">
+            <label class="f-label">🕐 Time</label>
+            <input class="f-input" id="addTime" type="time" value="08:00">
+          </div>
+        </div>
+        <div class="f-row">
+          <div class="f-group">
+            <label class="f-label">💺 Seats Available</label>
+            <select class="f-select" id="addSeats">
+              <option>1</option>
+              <option>2</option>
+              <option>3</option>
+              <option>4</option>
+            </select>
+          </div>
+          <div class="f-group">
+            <label class="f-label">💰 Price per Seat (₹)</label>
+            <input class="f-input" id="addPrice" type="number" placeholder="50" min="10" max="500">
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 4: Personal Info -->
+      <div class="s-content" id="sc4">
+        <div class="s-head">Your details</div>
+        <div class="f-group">
+          <label class="f-label">👤 Full Name</label>
+          <input class="f-input" id="addName" type="text" placeholder="Your name">
+        </div>
+        <div class="f-group">
+          <label class="f-label">📱 Contact Number</label>
+          <input class="f-input" id="addPhone" type="tel" placeholder="+91 9876543210">
+        </div>
+        <div class="f-group">
+          <label class="f-label">⚥ Gender</label>
+          <div class="gender-row">
+            <div class="gender-opt sel" id="gMale" onclick="selGender('male')">👨 Male</div>
+            <div class="gender-opt" id="gFemale" onclick="selGender('female')">👩 Female</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 5: Confirm -->
+      <div class="s-content" id="sc5">
+        <div class="s-head">Review your ride</div>
+        <div class="summary-block" id="rideSummary"></div>
+        <div
+          style="margin-top:14px;padding:12px;background:rgba(16,185,129,0.06);border-radius:var(--radius);border:1px solid rgba(16,185,129,0.2);font-size:0.82rem;color:#065F46">
+          ✅ Your ride will be visible to students heading to your college. They can book a seat and you share the cost.
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-ft">
+      <button class="btn btn-ghost" id="stepBack" onclick="stepNav(-1)" style="display:none">← Back</button>
+      <button class="btn btn-primary" id="stepNext" onclick="stepNav(1)">Next →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     RIDE DETAIL MODAL
+     ============================================================ -->
+<div class="overlay" id="detailOverlay">
+  <div class="modal-box wide">
+    <div class="modal-hd">
+      <div class="modal-title" id="detailTitle">Ride Details</div>
+      <button class="modal-close" onclick="closeModal('detailOverlay')">✕</button>
+    </div>
+    <div class="modal-body" id="detailBody" style="padding-bottom:0"></div>
+    <div class="modal-ft">
+      <a id="btnWhatsApp" class="btn btn-success" target="_blank" style="text-decoration:none;display:flex;align-items:center;gap:8px"><i class="fi fi-bs-whatsapp"></i> WhatsApp</a>
+      <a id="btnCall" class="btn btn-primary" style="text-decoration:none;display:flex;align-items:center;gap:8px"><i class="fi fi-bs-phone-call"></i> Call Driver</a>
+    </div>
+  </div>
+</div>
+
+<!-- THEME RIPPLE OVERLAY -->
+<div class="theme-ripple"></div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>

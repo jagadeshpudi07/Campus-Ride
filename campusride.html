@@ -1,0 +1,2723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CampusRide — Smarter Campus Rides</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500&family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+/* =============================================
+   DESIGN TOKENS - Glass Morphism & Fluid Design
+   ============================================= */
+:root {
+  --primary: #1A1A1A;
+  --primary-light: #4A4A4A;
+  --primary-dark: #000000;
+  --primary-glow: rgba(0,0,0,0.05);
+  --primary-subtle: rgba(0,0,0,0.03);
+  --secondary: #888888;
+  --success: #2C2C2C;
+  --warning: #F59E0B;
+  --danger: #EF4444;
+  --bg: #F5F3F0;
+  --bg-card: #FFFFFF;
+  --bg-dark: #1A1A1A;
+  --text: #1A1A1A;
+  --text-2: #333333;
+  --text-muted: #888888;
+  --border: rgba(0,0,0,0.08);
+  --border-2: rgba(0,0,0,0.15);
+  --shadow-sm: 0 2px 10px rgba(0,0,0,0.03);
+  --shadow-md: 0 4px 20px rgba(0,0,0,0.05);
+  --shadow-lg: 0 10px 40px rgba(0,0,0,0.08);
+  --shadow-xl: 0 20px 60px rgba(0,0,0,0.1);
+  --radius-sm: 4px;
+  --radius: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 24px;
+  --ease-out: cubic-bezier(0.2, 0, 0.4, 1);
+  --t: all 0.4s var(--ease-out);
+}
+
+/* =============================================
+   BASE - Fluid Design Foundation
+   ============================================= */
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth;font-size:16px}
+
+/* Fluid Background with Animated Gradient Mesh */
+body{
+  font-family:'DM Sans',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  overflow-x:hidden;
+  line-height:1.6;
+  position:relative;
+}
+
+/* Animated Fluid Background Layer */
+body::before{
+  content:'';
+  position:fixed;
+  inset:0;
+  z-index:-2;
+  background:
+    radial-gradient(ellipse 80vw 80vh at 20% 30%, rgba(101, 82, 208, 0.12) 0%, transparent 50%),
+    radial-gradient(ellipse 60vw 60vh at 80% 70%, rgba(139, 124, 232, 0.1) 0%, transparent 45%),
+    radial-gradient(ellipse 50vw 50vh at 50% 50%, rgba(184, 169, 240, 0.06) 0%, transparent 40%),
+    var(--bg);
+  animation:fluidBg 20s ease-in-out infinite;
+  pointer-events:none;
+}
+
+@keyframes fluidBg{
+  0%,100%{ transform:translate(0, 0) scale(1); }
+  25%{ transform:translate(2%, 2%) scale(1.02); }
+  50%{ transform:translate(-1%, 3%) scale(0.98); }
+  75%{ transform:translate(-2%, -2%) scale(1.01); }
+}
+
+/* Glass Scrollbar */
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:rgba(101,82,208,0.05);border-radius:4px}
+::-webkit-scrollbar-thumb{background:linear-gradient(180deg,var(--primary-light),var(--primary));border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:var(--primary-dark)}
+
+img{display:block;max-width:100%}
+button{font-family:inherit;cursor:pointer}
+input,select,textarea{font-family:inherit}
+a{text-decoration:none;color:inherit}
+
+/* =============================================
+   CINEMATIC INTRO
+   ============================================= */
+#intro{
+  position:fixed;inset:0;
+  background:var(--bg-dark);
+  z-index:9999;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:opacity 1.2s var(--ease-out),transform 1.2s var(--ease-out);
+}
+#intro.out{
+  opacity:0;
+  transform:scale(1.06);
+  pointer-events:none;
+}
+#routeCanvas{
+  position:absolute;inset:0;
+  width:100%;height:100%;
+}
+.intro-fog{
+  position:absolute;inset:0;
+  background:
+    radial-gradient(ellipse 60% 50% at 50% 50%, transparent 20%, rgba(8,8,17,0.55) 100%),
+    radial-gradient(ellipse 100% 40% at 50% 100%, rgba(8,8,17,0.8) 0%, transparent 100%),
+    radial-gradient(ellipse 100% 40% at 50% 0%, rgba(8,8,17,0.8) 0%, transparent 100%);
+  pointer-events:none;
+}
+.intro-center{
+  position:relative;z-index:2;
+  text-align:center;
+  opacity:0;
+  transform:translateY(28px);
+  transition:opacity 1s var(--ease-out) 1.6s, transform 1s var(--ease-out) 1.6s;
+}
+.intro-center.show{opacity:1;transform:translateY(0)}
+.intro-wordmark{
+  font-family:'Syne',sans-serif;
+  font-size:clamp(3.5rem,9vw,8rem);
+  font-weight:800;
+  letter-spacing:-3px;
+  line-height:1;
+  background:linear-gradient(135deg,#ffffff 0%,var(--primary-light) 45%,#c4baf5 80%,#ffffff 100%);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+  margin-bottom:18px;
+  filter:drop-shadow(0 0 40px rgba(139,124,232,0.4));
+}
+.intro-tagline{
+  color:rgba(255,255,255,0.5);
+  font-size:clamp(0.85rem,2vw,1.15rem);
+  font-weight:400;
+  letter-spacing:0.8px;
+}
+.intro-scroll{
+  position:absolute;bottom:36px;left:50%;
+  transform:translateX(-50%);
+  display:flex;flex-direction:column;align-items:center;gap:10px;
+  color:rgba(255,255,255,0.35);
+  font-size:0.68rem;
+  letter-spacing:3px;
+  text-transform:uppercase;
+  opacity:0;
+  transition:opacity 1s var(--ease-out) 3.2s;
+}
+.intro-scroll.show{opacity:1}
+.scroll-chevron{
+  width:18px;height:18px;
+  border-right:1.5px solid rgba(255,255,255,0.35);
+  border-bottom:1.5px solid rgba(255,255,255,0.35);
+  transform:rotate(45deg);
+  animation:chev 1.6s ease infinite;
+}
+@keyframes chev{0%,100%{transform:rotate(45deg) translate(0,0)}50%{transform:rotate(45deg) translate(3px,3px)}}
+
+/* =============================================
+   MAIN APP
+   ============================================= */
+#app{opacity:0;transition:opacity 0.9s var(--ease-out) 0.3s}
+#app.show{opacity:1}
+
+/* =============================================
+   NAVIGATION - Glass Morphism
+   ============================================= */
+nav{
+  position:fixed;top:0;left:0;right:0;
+  z-index:500;
+  padding:14px 40px;
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--bg-glass);
+  backdrop-filter:var(--blur-lg);
+  -webkit-backdrop-filter:var(--blur-lg);
+  border-bottom:1px solid var(--border-glass);
+  transition:var(--t);
+}
+nav.scrolled{
+  background:rgba(255,255,255,0.92);
+  box-shadow:var(--shadow-lg);
+  padding:12px 40px;
+}
+.nav-brand{
+  font-family:'Syne',sans-serif;
+  font-size:1.45rem;
+  font-weight:800;
+  background:linear-gradient(135deg,var(--primary) 0%,var(--primary-light) 50%,var(--primary-lighter) 100%);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+  letter-spacing:-0.5px;
+  transition:transform 0.3s var(--ease-spring);
+}
+.nav-brand:hover{transform:scale(1.02)}
+.nav-brand em{-webkit-text-fill-color:var(--text);font-style:normal}
+.nav-links{
+  display:flex;gap:36px;list-style:none;
+}
+.nav-links a{
+  font-size:0.88rem;font-weight:500;
+  color:var(--text-muted);
+  transition:all 0.25s var(--ease-out);
+  position:relative;
+  padding:6px 0;
+}
+.nav-links a::after{
+  content:'';
+  position:absolute;
+  bottom:0;left:0;
+  width:0;height:2px;
+  background:linear-gradient(90deg,var(--primary),var(--primary-light));
+  transition:width 0.3s var(--ease-spring);
+  border-radius:2px;
+}
+.nav-links a:hover{color:var(--primary)}
+.nav-links a:hover::after{width:100%}
+.nav-actions{display:flex;gap:12px;align-items:center}
+
+/* =============================================
+   BUTTONS - Glass & Fluid Styles
+   ============================================= */
+.btn{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:12px 24px;
+  border-radius:var(--radius-full);
+  font-size:0.88rem;font-weight:600;
+  border:none;cursor:pointer;
+  transition:all 0.35s var(--ease-spring);
+  white-space:nowrap;
+  outline:none;
+  position:relative;
+  overflow:hidden;
+}
+.btn::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:linear-gradient(135deg,rgba(255,255,255,0.2),transparent);
+  opacity:0;
+  transition:opacity 0.3s;
+}
+.btn:hover::before{opacity:1}
+.btn:focus-visible{box-shadow:0 0 0 3px var(--primary-glow),0 0 0 6px rgba(101,82,208,0.1)}
+.btn-primary{
+  background:linear-gradient(135deg,var(--primary) 0%,var(--primary-dark) 100%);
+  color:#fff;
+  box-shadow:var(--shadow-md),0 0 0 1px rgba(255,255,255,0.1) inset;
+}
+.btn-primary:hover{
+  transform:translateY(-3px) scale(1.02);
+  box-shadow:var(--shadow-lg),var(--shadow-glow),0 0 0 1px rgba(255,255,255,0.15) inset;
+}
+.btn-ghost{
+  background:rgba(255,255,255,0.5);
+  color:var(--primary);
+  border:1.5px solid var(--border-2);
+  backdrop-filter:var(--blur-sm);
+}
+.btn-ghost:hover{
+  background:var(--bg-glass);
+  border-color:var(--primary);
+  transform:translateY(-2px);
+  box-shadow:var(--shadow-md);
+}
+.btn-lg{padding:14px 32px;font-size:0.96rem;border-radius:var(--radius)}
+.btn-glow{
+  background:linear-gradient(135deg,var(--primary) 0%,var(--primary-light) 50%,var(--primary-lighter) 100%);
+  color:#fff;
+  box-shadow:var(--shadow-md),var(--shadow-glow),0 0 0 1px rgba(255,255,255,0.2) inset;
+  position:relative;
+}
+.btn-glow::after{
+  content:'';
+  position:absolute;
+  inset:-2px;
+  background:linear-gradient(135deg,var(--primary-light),var(--primary),var(--primary-lighter));
+  border-radius:inherit;
+  z-index:-1;
+  opacity:0.5;
+  filter:blur(12px);
+  animation:glowPulse 3s ease infinite;
+}
+.btn-glow:hover{
+  transform:translateY(-4px) scale(1.03);
+  box-shadow:var(--shadow-xl),0 0 40px rgba(101,82,208,0.5),0 0 0 1px rgba(255,255,255,0.2) inset;
+}
+@keyframes glowPulse{
+  0%,100%{opacity:0.4;transform:scale(1)}
+  50%{opacity:0.7;transform:scale(1.05)}
+}
+@keyframes btnPulse{
+  0%,100%{box-shadow:0 4px 24px var(--primary-glow)}
+  50%{box-shadow:0 4px 40px rgba(101,82,208,0.55)}
+}
+.btn-success{
+  background:linear-gradient(135deg,var(--success) 0%,#059669 100%);
+  color:#fff;
+  box-shadow:0 4px 18px rgba(16,185,129,0.3),0 0 0 1px rgba(255,255,255,0.1) inset;
+}
+.btn-success:hover{background:#059669;transform:translateY(-3px);box-shadow:0 8px 28px rgba(16,185,129,0.4)}
+
+/* =============================================
+   HERO - Fluid Design with Glass Elements
+   ============================================= */
+#hero{
+  min-height:100vh;
+  padding:130px 5% 80px;
+  position:relative;
+  display:flex;align-items:center;
+  overflow:hidden;
+}
+.hero-bg{
+  position:absolute;inset:0;
+  background:
+    radial-gradient(ellipse 80vw 70vh at 70% 50%,rgba(101,82,208,0.12) 0%,transparent 60%),
+    radial-gradient(ellipse 60vw 50vh at 20% 80%,rgba(139,124,232,0.1) 0%,transparent 50%),
+    radial-gradient(ellipse 40vw 40vh at 90% 20%,rgba(184,169,240,0.08) 0%,transparent 40%);
+  animation:heroFloat 15s ease-in-out infinite;
+}
+@keyframes heroFloat{
+  0%,100%{transform:translate(0,0) scale(1)}
+  50%{transform:translate(-2%,1%) scale(1.02)}
+}
+.hero-grid-bg{
+  position:absolute;inset:0;
+  background-image:
+    linear-gradient(rgba(101,82,208,0.04) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(101,82,208,0.04) 1px,transparent 1px);
+  background-size:64px 64px;
+  mask-image:radial-gradient(ellipse 80% 80% at 50% 50%,black 30%,transparent 100%);
+}
+.hero-content{
+  position:relative;z-index:2;
+  max-width:640px;
+}
+.hero-pill{
+  display:inline-flex;align-items:center;gap:8px;
+  background:rgba(101,82,208,0.08);
+  border:1px solid rgba(101,82,208,0.18);
+  padding:6px 16px 6px 8px;
+  border-radius:50px;
+  margin-bottom:26px;
+}
+.hero-pill-dot{
+  width:8px;height:8px;
+  background:var(--success);
+  border-radius:50%;
+  box-shadow:0 0 0 3px rgba(16,185,129,0.2);
+  animation:dot 2s ease infinite;
+}
+@keyframes dot{0%,100%{opacity:1}50%{opacity:0.5}}
+.hero-pill span{
+  font-size:0.78rem;font-weight:700;
+  color:var(--primary);letter-spacing:0.4px;
+}
+.hero-title{
+  font-family:'Syne',sans-serif;
+  font-size:clamp(2.8rem,5.5vw,5rem);
+  font-weight:800;
+  line-height:1.04;
+  letter-spacing:-2.5px;
+  margin-bottom:22px;
+}
+.hero-title .grad{
+  background:linear-gradient(135deg,var(--primary) 0%,var(--primary-light) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+.hero-desc{
+  font-size:1.05rem;
+  color:var(--text-muted);
+  line-height:1.72;
+  margin-bottom:38px;
+  max-width:480px;
+}
+.hero-btns{
+  display:flex;gap:14px;flex-wrap:wrap;
+  margin-bottom:54px;
+}
+.hero-metrics{
+  display:flex;gap:44px;
+}
+.metric{
+  position:relative;
+  padding:8px 0;
+}
+.metric::before{
+  content:'';
+  position:absolute;
+  left:-12px;top:0;bottom:0;
+  width:3px;
+  background:linear-gradient(180deg,var(--primary-light),var(--primary));
+  border-radius:2px;
+  opacity:0.4;
+}
+.metric-val{
+  font-family:'Syne',sans-serif;
+  font-size:2.1rem;font-weight:800;
+  background:linear-gradient(135deg,var(--primary) 0%,var(--primary-light) 100%);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+  line-height:1;
+}
+.metric-label{
+  font-size:0.78rem;color:var(--text-muted);margin-top:6px;
+}
+.hero-map-card{
+  position:absolute;right:5%;top:50%;
+  transform:translateY(-50%);
+  width:min(430px,42vw);
+  height:480px;
+  border-radius:var(--radius-xl);
+  overflow:hidden;
+  box-shadow:var(--shadow-xl),var(--shadow-glass);
+  border:1px solid var(--border-glass);
+  background:var(--bg-glass);
+  backdrop-filter:var(--blur-md);
+  transition:all 0.5s var(--ease-spring);
+}
+.hero-map-card:hover{
+  transform:translateY(-52%) scale(1.02);
+  box-shadow:var(--shadow-xl),0 32px 80px rgba(101,82,208,0.25);
+}
+#heroMapEl{width:100%;height:100%}
+
+/* =============================================
+   FEATURES - Glass Morphism Cards
+   ============================================= */
+#features{
+  padding:120px 5%;
+  position:relative;
+}
+#features::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:
+    radial-gradient(ellipse 50vw 50vh at 30% 60%,rgba(101,82,208,0.06) 0%,transparent 50%),
+    radial-gradient(ellipse 40vw 40vh at 70% 30%,rgba(139,124,232,0.05) 0%,transparent 45%);
+  pointer-events:none;
+}
+.section-eyebrow{
+  font-size:0.72rem;font-weight:700;
+  letter-spacing:3px;text-transform:uppercase;
+  color:var(--primary);margin-bottom:12px;
+  position:relative;
+}
+.section-heading{
+  font-family:'Syne',sans-serif;
+  font-size:clamp(2rem,4vw,3.2rem);
+  font-weight:800;
+  letter-spacing:-1.5px;
+  margin-bottom:14px;
+  position:relative;
+}
+.section-sub{
+  color:var(--text-muted);
+  font-size:1rem;line-height:1.7;
+  max-width:480px;
+  margin-bottom:56px;
+  position:relative;
+}
+.features-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+  gap:24px;
+  position:relative;
+}
+.feat-card{
+  background:var(--bg-glass);
+  border:1px solid var(--border-glass);
+  border-radius:var(--radius-lg);
+  padding:32px;
+  position:relative;overflow:hidden;
+  transition:all 0.4s var(--ease-spring);
+  cursor:default;
+  backdrop-filter:var(--blur-sm);
+  box-shadow:var(--shadow-sm);
+}
+.feat-card::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(255,255,255,0.5) 0%,rgba(255,255,255,0.1) 100%);
+  opacity:0.8;
+  z-index:0;
+}
+.feat-card::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(101,82,208,0.06) 0%,transparent 60%);
+  opacity:0;transition:opacity 0.4s;
+  z-index:0;
+}
+.feat-card:hover{
+  transform:translateY(-12px) scale(1.02);
+  box-shadow:var(--shadow-xl),var(--shadow-glass);
+  border-color:var(--border-2);
+  backdrop-filter:var(--blur-md);
+}
+.feat-card:hover::after{opacity:1}
+.feat-glow{
+  position:absolute;top:-40px;right:-40px;
+  width:120px;height:120px;
+  background:radial-gradient(circle,rgba(101,82,208,0.2) 0%,transparent 70%);
+  transition:all 0.5s var(--ease-out);
+  filter:blur(20px);
+}
+.feat-card:hover .feat-glow{
+  transform:scale(2.5);
+  opacity:0.6;
+}
+.feat-icon-wrap{
+  width:56px;height:56px;
+  background:linear-gradient(135deg,var(--primary) 0%,var(--primary-light) 50%,var(--primary-lighter) 100%);
+  border-radius:var(--radius);
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.5rem;
+  margin-bottom:20px;
+  box-shadow:0 8px 24px var(--primary-glow),0 0 0 1px rgba(255,255,255,0.2) inset;
+  position:relative;z-index:1;
+  transition:transform 0.4s var(--ease-spring);
+}
+.feat-card:hover .feat-icon-wrap{
+  transform:scale(1.1) rotate(-5deg);
+}
+.feat-name{
+  font-family:'Syne',sans-serif;
+  font-size:1.15rem;font-weight:700;
+  margin-bottom:10px;color:var(--text);
+  position:relative;z-index:1;
+}
+.feat-desc{
+  font-size:0.9rem;color:var(--text-muted);
+  line-height:1.7;position:relative;z-index:1;
+}
+
+/* =============================================
+   HOW IT WORKS - Glass Steps
+   ============================================= */
+#how-it-works{
+  padding:100px 5%;
+  background:linear-gradient(180deg,#fff 0%,var(--bg) 100%);
+  position:relative;
+}
+#how-it-works::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:
+    radial-gradient(ellipse 60vw 40vh at 50% 80%,rgba(101,82,208,0.04) 0%,transparent 50%);
+  pointer-events:none;
+}
+.steps-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:40px;
+  margin-top:50px;
+  position:relative;
+}
+.step-item{
+  text-align:center;
+  position:relative;
+  padding:24px;
+  background:var(--bg-glass);
+  border:1px solid var(--border-glass);
+  border-radius:var(--radius-lg);
+  backdrop-filter:var(--blur-sm);
+  transition:all 0.4s var(--ease-spring);
+}
+.step-item:hover{
+  transform:translateY(-8px);
+  box-shadow:var(--shadow-lg);
+  backdrop-filter:var(--blur-md);
+}
+.step-item::after{
+  content:'→';
+  position:absolute;right:-26px;top:50%;
+  transform:translateY(-50%);
+  color:var(--primary-light);font-size:1.4rem;
+  opacity:0.6;
+}
+.step-item:last-child::after{display:none}
+.step-num{
+  width:64px;height:64px;
+  background:linear-gradient(135deg,var(--primary-subtle) 0%,rgba(255,255,255,0.8) 100%);
+  border:2px solid var(--border-2);
+  border-radius:50%;
+  font-family:'Syne',sans-serif;
+  font-size:1.3rem;font-weight:800;
+  background:linear-gradient(135deg,var(--primary) 0%,var(--primary-light) 100%);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto 16px;
+  box-shadow:0 4px 16px rgba(101,82,208,0.15);
+  transition:transform 0.3s var(--ease-spring);
+}
+.step-item:hover .step-num{
+  transform:scale(1.1);
+  box-shadow:0 8px 24px rgba(101,82,208,0.25);
+}
+.step-title{
+  font-family:'Syne',sans-serif;
+  font-weight:700;font-size:1rem;
+  margin-bottom:10px;
+  color:var(--text);
+}
+.step-desc{font-size:0.85rem;color:var(--text-muted);line-height:1.6}
+
+/* =============================================
+   SEARCH SECTION - Glass Search Interface
+   ============================================= */
+#search-section{
+  padding:100px 5%;
+  position:relative;
+}
+#search-section::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:
+    radial-gradient(ellipse 70vw 60vh at 30% 20%,rgba(101,82,208,0.05) 0%,transparent 50%),
+    radial-gradient(ellipse 50vw 40vh at 80% 80%,rgba(139,124,232,0.04) 0%,transparent 45%);
+  pointer-events:none;
+}
+.search-wrapper{
+  display:grid;
+  grid-template-columns:380px 1fr;
+  gap:0;
+  border-radius:var(--radius-2xl);
+  overflow:hidden;
+  box-shadow:var(--shadow-xl),var(--shadow-glass);
+  border:1px solid var(--border-glass);
+  height:600px;
+  background:var(--bg-glass);
+  backdrop-filter:var(--blur-md);
+  position:relative;
+}
+.search-panel{
+  background:rgba(255,255,255,0.6);
+  padding:36px 32px;
+  display:flex;flex-direction:column;gap:20px;
+  overflow-y:auto;
+  border-right:1px solid var(--border-glass);
+  backdrop-filter:var(--blur-sm);
+}
+.search-panel-title{
+  font-family:'Syne',sans-serif;
+  font-size:1.35rem;font-weight:800;
+  color:var(--text);
+  margin-bottom:4px;
+}
+.input-label{
+  font-size:0.7rem;font-weight:700;
+  text-transform:uppercase;letter-spacing:1.2px;
+  color:var(--text-muted);margin-bottom:8px;
+  display:block;
+}
+.input-wrap{position:relative}
+.input-ico{
+  position:absolute;left:14px;top:50%;
+  transform:translateY(-50%);
+  font-size:1.1rem;pointer-events:none;
+  opacity:0.7;
+}
+.s-input{
+  width:100%;
+  padding:13px 14px 13px 44px;
+  border:1.5px solid var(--border-glass);
+  border-radius:var(--radius);
+  font-size:0.9rem;color:var(--text);
+  background:rgba(255,255,255,0.7);
+  outline:none;
+  transition:all 0.3s var(--ease-out);
+  backdrop-filter:var(--blur-sm);
+}
+.s-input:focus{
+  border-color:var(--primary);
+  background:#fff;
+  box-shadow:0 0 0 4px rgba(101,82,208,0.1),0 4px 12px rgba(101,82,208,0.1);
+  transform:translateY(-1px);
+}
+.loc-btn{
+  display:flex;align-items:center;gap:6px;
+  font-size:0.78rem;font-weight:600;
+  color:var(--primary);background:none;border:none;
+  padding:6px 0;cursor:pointer;
+  transition:all 0.25s;margin-top:6px;
+}
+.loc-btn:hover{opacity:0.7;transform:translateX(2px)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{
+  padding:10px 16px;
+  border-radius:var(--radius-full);
+  font-size:0.82rem;font-weight:600;
+  cursor:pointer;
+  border:1.5px solid var(--border-glass);
+  background:rgba(255,255,255,0.6);
+  color:var(--text-muted);
+  transition:all 0.3s var(--ease-spring);
+  backdrop-filter:var(--blur-sm);
+}
+.chip:hover{
+  background:rgba(255,255,255,0.9);
+  border-color:var(--primary-light);
+  transform:translateY(-2px);
+  box-shadow:var(--shadow-sm);
+}
+.chip.on{
+  background:linear-gradient(135deg,var(--primary) 0%,var(--primary-light) 100%);
+  color:#fff;
+  border-color:transparent;
+  transform:translateY(-2px);
+  box-shadow:0 6px 20px var(--primary-glow),0 0 0 1px rgba(255,255,255,0.2) inset;
+}
+.map-pane{position:relative;flex:1}
+#heroMapEl{width:100%;height:100%}
+
+/* =============================================
+   RESULTS - Glass Results Interface
+   ============================================= */
+#results-section{
+  padding:80px 5%;
+  background:var(--bg);
+  display:none;
+  position:relative;
+}
+#results-section.on{display:block}
+.results-grid{
+  display:grid;
+  grid-template-columns:280px 1fr;
+  gap:24px;
+  align-items:start;
+}
+
+/* Filter Panel - Glass Card */
+.filter-card{
+  background:var(--bg-glass);
+  border-radius:var(--radius-lg);
+  padding:28px;
+  border:1px solid var(--border-glass);
+  position:sticky;top:100px;
+  backdrop-filter:var(--blur-md);
+  box-shadow:var(--shadow-lg);
+  transition:all 0.4s var(--ease-out);
+}
+.filter-card:hover{
+  box-shadow:var(--shadow-xl);
+  backdrop-filter:var(--blur-lg);
+}
+.filter-head{
+  font-family:'Syne',sans-serif;
+  font-size:1rem;font-weight:800;
+  color:var(--text);
+  padding-bottom:14px;
+  border-bottom:1px solid var(--border-glass);
+  margin-bottom:20px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.filter-clear{
+  font-size:0.75rem;font-weight:600;
+  color:var(--primary);background:none;border:none;cursor:pointer;
+  padding:4px 8px;
+  border-radius:6px;
+  transition:all 0.2s;
+}
+.filter-clear:hover{background:var(--primary-subtle)}
+.filter-group{margin-bottom:24px}
+.fg-title{
+  font-size:0.72rem;font-weight:700;
+  text-transform:uppercase;letter-spacing:1.2px;
+  color:var(--text-muted);margin-bottom:12px;
+}
+.f-opts{display:flex;flex-wrap:wrap;gap:8px}
+.f-btn{
+  padding:8px 14px;
+  border-radius:10px;
+  font-size:0.82rem;font-weight:600;
+  cursor:pointer;
+  border:1.5px solid var(--border-glass);
+  background:rgba(255,255,255,0.5);
+  color:var(--text-muted);
+  transition:all 0.25s var(--ease-out);
+  display:flex;align-items:center;gap:5px;
+  backdrop-filter:var(--blur-sm);
+}
+.f-btn:hover{
+  background:rgba(255,255,255,0.8);
+  border-color:var(--primary-light);
+  transform:translateY(-1px);
+}
+.f-btn.on{
+  background:linear-gradient(135deg,var(--primary-subtle) 0%,rgba(255,255,255,0.9) 100%);
+  color:var(--primary);
+  border-color:var(--primary);
+  box-shadow:0 4px 12px rgba(101,82,208,0.15);
+}
+.price-slider{
+  width:100%;accent-color:var(--primary);
+  height:4px;cursor:pointer;
+  margin-top:2px;
+}
+.price-labels{
+  display:flex;justify-content:space-between;
+  margin-top:7px;font-size:0.75rem;color:var(--text-muted);
+}
+.price-labels strong{color:var(--primary);font-weight:700}
+
+/* Results Right - Glass Styling */
+.results-right{display:flex;flex-direction:column;gap:16px}
+.results-bar{
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:12px;
+  padding:16px 20px;
+  background:var(--bg-glass);
+  border-radius:var(--radius);
+  border:1px solid var(--border-glass);
+  backdrop-filter:var(--blur-sm);
+}
+.results-label{
+  font-size:0.9rem;color:var(--text-muted);
+}
+.results-label b{
+  font-family:'Syne',sans-serif;
+  font-size:1.1rem;color:var(--text);
+}
+.results-map-card{
+  height:240px;
+  border-radius:var(--radius-lg);
+  overflow:hidden;
+  border:1px solid var(--border-glass);
+  box-shadow:var(--shadow-md);
+  background:var(--bg-glass);
+  backdrop-filter:var(--blur-sm);
+}
+#resultsMapEl{width:100%;height:100%}
+.rides-list{display:flex;flex-direction:column;gap:16px}
+
+/* Ride Card - Glass Card */
+.ride-card{
+  background:var(--bg-glass);
+  border-radius:var(--radius-lg);
+  padding:22px 26px;
+  border:1px solid var(--border-glass);
+  cursor:pointer;
+  transition:all 0.4s var(--ease-spring);
+  opacity:0;
+  transform:translateY(20px);
+  backdrop-filter:var(--blur-sm);
+  box-shadow:var(--shadow-sm);
+}
+.ride-card.in{
+  animation:rideIn 0.5s var(--ease-spring) forwards;
+}
+@keyframes rideIn{to{opacity:1;transform:translateY(0)}}
+.ride-card:hover{
+  border-color:var(--border-2);
+  box-shadow:var(--shadow-lg),var(--shadow-glass);
+  transform:translateY(-6px) scale(1.01);
+  backdrop-filter:var(--blur-md);
+}
+.rc-top{
+  display:flex;align-items:flex-start;justify-content:space-between;
+  margin-bottom:12px;gap:10px;
+}
+.rc-driver{display:flex;align-items:center;gap:11px}
+.rc-avatar{
+  width:42px;height:42px;border-radius:50%;
+  background:linear-gradient(135deg,var(--primary),var(--primary-light));
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-family:'Syne',sans-serif;
+  font-weight:700;font-size:0.9rem;flex-shrink:0;
+}
+.rc-name{font-weight:600;font-size:0.92rem;color:var(--text)}
+.rc-rating{
+  font-size:0.76rem;color:var(--text-muted);
+  display:flex;align-items:center;gap:3px;margin-top:1px;
+}
+.star{color:#F59E0B}
+.rc-price{
+  font-family:'Syne',sans-serif;
+  font-size:1.5rem;font-weight:800;color:var(--primary);
+  line-height:1;white-space:nowrap;
+}
+.rc-price sup{font-size:0.75rem;vertical-align:super;font-family:'DM Sans',sans-serif;font-weight:500}
+.rc-price small{font-size:0.7rem;color:var(--text-muted);font-family:'DM Sans',sans-serif;font-weight:400}
+.rc-route{
+  display:flex;align-items:center;gap:6px;
+  padding:9px 13px;
+  background:var(--bg);border-radius:9px;
+  margin-bottom:12px;font-size:0.83rem;
+}
+.rc-from,.rc-to{font-weight:500;color:var(--text)}
+.rc-arrow{flex:1;text-align:center;color:var(--primary);font-size:0.65rem;letter-spacing:1px}
+.rc-meta{display:flex;align-items:center;flex-wrap:wrap;gap:12px}
+.rc-m{
+  display:flex;align-items:center;gap:4px;
+  font-size:0.77rem;color:var(--text-muted);
+}
+.rc-m b{color:var(--text);font-weight:600}
+.rc-badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.badge{
+  display:inline-flex;align-items:center;gap:3px;
+  padding:3px 10px;border-radius:50px;
+  font-size:0.7rem;font-weight:700;letter-spacing:0.2px;
+}
+.b-bike{background:rgba(245,158,11,0.1);color:#B45309;border:1px solid rgba(245,158,11,0.2)}
+.b-car{background:rgba(59,130,246,0.1);color:#1D4ED8;border:1px solid rgba(59,130,246,0.2)}
+.b-female{background:rgba(236,72,153,0.08);color:#BE185D;border:1px solid rgba(236,72,153,0.15)}
+.b-male{background:rgba(59,130,246,0.08);color:#1E40AF;border:1px solid rgba(59,130,246,0.15)}
+.b-any{background:rgba(16,185,129,0.08);color:#065F46;border:1px solid rgba(16,185,129,0.15)}
+.b-popular{background:rgba(245,158,11,0.1);color:#92400E;border:1px solid rgba(245,158,11,0.2)}
+.b-recommended{background:var(--primary-subtle);color:var(--primary-dark);border:1px solid rgba(101,82,208,0.18)}
+.b-cheapest{background:rgba(16,185,129,0.08);color:#065F46;border:1px solid rgba(16,185,129,0.18)}
+.b-fastest{background:rgba(239,68,68,0.08);color:#991B1B;border:1px solid rgba(239,68,68,0.15)}
+.b-seats{background:rgba(16,185,129,0.1);color:#059669;border:1px solid rgba(16,185,129,0.2)}
+
+/* Skeleton */
+.skel{
+  background:linear-gradient(90deg,#ede9f7 25%,#e4dff5 50%,#ede9f7 75%);
+  background-size:200% 100%;
+  border-radius:8px;
+  animation:skel 1.5s ease infinite;
+}
+@keyframes skel{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.skel-card{
+  background:#fff;border-radius:var(--radius-lg);
+  padding:18px 22px;border:1px solid var(--border);
+  display:flex;flex-direction:column;gap:10px;
+}
+
+/* Empty state */
+.empty{
+  text-align:center;padding:60px 20px;
+}
+.empty .e-ico{font-size:3rem;margin-bottom:14px}
+.empty h3{
+  font-family:'Syne',sans-serif;
+  font-size:1.1rem;margin-bottom:7px;
+}
+.empty p{font-size:0.85rem;color:var(--text-muted)}
+
+/* =============================================
+   MODALS - Glass Morphism Dialogs
+   ============================================= */
+.overlay{
+  position:fixed;inset:0;
+  background:rgba(10,9,22,0.55);
+  backdrop-filter:var(--blur-xl);
+  -webkit-backdrop-filter:var(--blur-xl);
+  z-index:800;
+  display:flex;align-items:center;justify-content:center;
+  padding:24px;
+  opacity:0;pointer-events:none;
+  transition:opacity 0.4s var(--ease-out);
+}
+.overlay.open{opacity:1;pointer-events:all}
+.modal-box{
+  background:var(--bg-glass);
+  border-radius:var(--radius-2xl);
+  width:100%;max-width:540px;
+  max-height:92vh;overflow-y:auto;
+  box-shadow:0 40px 100px rgba(0,0,0,0.3),var(--shadow-glass),0 0 0 1px var(--border-glass) inset;
+  border:1px solid var(--border-glass);
+  transform:translateY(50px) scale(0.92);
+  transition:transform 0.5s var(--ease-spring);
+  backdrop-filter:var(--blur-lg);
+}
+.overlay.open .modal-box{transform:translateY(0) scale(1)}
+.modal-box.wide{max-width:640px}
+
+.modal-hd{
+  padding:28px 32px 0;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;
+  background:linear-gradient(180deg,var(--bg-glass) 0%,rgba(255,255,255,0.9) 100%);
+  z-index:2;
+  padding-bottom:14px;
+  border-bottom:1px solid var(--border-glass);
+  backdrop-filter:var(--blur-md);
+}
+.modal-title{
+  font-family:'Syne',sans-serif;
+  font-size:1.4rem;font-weight:800;
+  background:linear-gradient(135deg,var(--text) 0%,var(--primary) 100%);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+.modal-close{
+  width:38px;height:38px;border-radius:50%;
+  background:var(--bg-glass);
+  border:1px solid var(--border-glass);
+  cursor:pointer;
+  font-size:1.2rem;display:flex;align-items:center;justify-content:center;
+  color:var(--text-muted);
+  transition:all 0.3s var(--ease-spring);
+  backdrop-filter:var(--blur-sm);
+}
+.modal-close:hover{
+  background:var(--primary-subtle);
+  color:var(--primary);
+  transform:rotate(90deg) scale(1.1);
+  border-color:var(--primary-light);
+}
+
+/* Step Indicator - Glass Style */
+.step-bar{
+  display:flex;align-items:center;
+  padding:20px 32px;
+  background:linear-gradient(180deg,rgba(255,255,255,0.5) 0%,transparent 100%);
+}
+.s-dot{
+  width:36px;height:36px;border-radius:50%;
+  background:var(--bg-glass);
+  border:2px solid var(--border-glass);
+  display:flex;align-items:center;justify-content:center;
+  font-size:0.8rem;font-weight:700;color:var(--text-muted);
+  transition:all 0.4s var(--ease-spring);
+  flex-shrink:0;position:relative;z-index:1;
+  backdrop-filter:var(--blur-sm);
+}
+.s-dot.act{
+  background:linear-gradient(135deg,var(--primary) 0%,var(--primary-light) 100%);
+  border-color:transparent;
+  color:#fff;
+  box-shadow:0 4px 16px rgba(101,82,208,0.3),0 0 0 4px rgba(101,82,208,0.15);
+  transform:scale(1.1);
+}
+.s-dot.done{
+  background:var(--success);
+  border-color:var(--success);
+  color:#fff;
+  box-shadow:0 4px 16px rgba(16,185,129,0.3);
+}
+.s-line{
+  flex:1;height:3px;
+  background:var(--border-glass);
+  border-radius:2px;
+  transition:all 0.4s var(--ease-out);
+}
+.s-line.done{
+  background:linear-gradient(90deg,var(--success),rgba(16,185,129,0.5));
+}
+
+.modal-body{padding:4px 30px 0}
+.s-content{display:none}
+.s-content.act{display:block}
+.s-head{
+  font-family:'Syne',sans-serif;
+  font-size:1.05rem;font-weight:700;
+  margin-bottom:18px;color:var(--text);
+}
+.veh-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:8px}
+.veh-opt{
+  border:2px solid var(--border-glass);
+  border-radius:var(--radius-lg);
+  padding:28px 20px;
+  text-align:center;
+  cursor:pointer;
+  transition:all 0.35s var(--ease-spring);
+  background:var(--bg-glass);
+  backdrop-filter:var(--blur-sm);
+}
+.veh-opt:hover{
+  border-color:var(--primary-light);
+  background:rgba(101,82,208,0.05);
+  transform:translateY(-4px);
+  box-shadow:var(--shadow-sm);
+}
+.veh-opt.sel{
+  border-color:var(--primary);
+  background:linear-gradient(135deg,rgba(101,82,208,0.08) 0%,rgba(255,255,255,0.8) 100%);
+  box-shadow:0 0 0 2px var(--primary),var(--shadow-md);
+  transform:translateY(-4px) scale(1.02);
+}
+.veh-ico{font-size:2.6rem;margin-bottom:10px;transition:transform 0.3s var(--ease-spring)}
+.veh-opt:hover .veh-ico{transform:scale(1.15) rotate(-5deg)}
+.veh-lbl{font-weight:700;font-size:0.92rem;color:var(--text)}
+
+.f-group{margin-bottom:18px}
+.f-label{
+  display:block;font-size:0.72rem;font-weight:700;
+  text-transform:uppercase;letter-spacing:1.2px;
+  color:var(--text-muted);margin-bottom:8px;
+}
+.f-input{
+  width:100%;padding:13px 16px;
+  border:1.5px solid var(--border-glass);
+  border-radius:var(--radius);
+  font-size:0.92rem;color:var(--text);
+  background:rgba(255,255,255,0.7);
+  outline:none;
+  transition:all 0.3s var(--ease-out);
+  backdrop-filter:var(--blur-sm);
+}
+.f-input:focus{
+  border-color:var(--primary);
+  background:#fff;
+  box-shadow:0 0 0 4px rgba(101,82,208,0.1),0 4px 12px rgba(101,82,208,0.1);
+  transform:translateY(-2px);
+}
+.f-select{
+  width:100%;padding:13px 16px;
+  border:1.5px solid var(--border-glass);
+  border-radius:var(--radius);
+  font-size:0.92rem;color:var(--text);
+  background:rgba(255,255,255,0.7);
+  outline:none;
+  transition:all 0.3s var(--ease-out);
+  appearance:none;cursor:pointer;
+  backdrop-filter:var(--blur-sm);
+}
+.f-select:focus{
+  border-color:var(--primary);
+  background:#fff;
+  box-shadow:0 0 0 4px rgba(101,82,208,0.1),0 4px 12px rgba(101,82,208,0.1);
+}
+.f-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.gender-row{display:flex;gap:12px}
+.gender-opt{
+  flex:1;padding:12px 10px;
+  border:1.5px solid var(--border-glass);
+  border-radius:var(--radius);
+  cursor:pointer;font-size:0.88rem;font-weight:600;
+  background:var(--bg-glass);color:var(--text-muted);
+  transition:all 0.3s var(--ease-spring);text-align:center;
+  backdrop-filter:var(--blur-sm);
+}
+.gender-opt:hover{
+  border-color:var(--primary-light);
+  background:rgba(101,82,208,0.05);
+  transform:translateY(-2px);
+}
+.gender-opt.sel{
+  border-color:var(--primary);
+  background:linear-gradient(135deg,var(--primary-subtle) 0%,rgba(255,255,255,0.9) 100%);
+  color:var(--primary);
+  box-shadow:0 4px 12px rgba(101,82,208,0.15);
+  transform:translateY(-2px);
+}
+
+/* Summary - Glass Style */
+.summary-block{
+  background:var(--bg-glass);
+  border-radius:var(--radius-lg);
+  padding:22px;
+  border:1px solid var(--border-glass);
+  backdrop-filter:var(--blur-sm);
+}
+.sum-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:10px 0;border-bottom:1px solid var(--border-glass);
+  font-size:0.88rem;
+}
+.sum-row:last-child{border-bottom:none}
+.sum-lbl{color:var(--text-muted)}
+.sum-val{font-weight:600;color:var(--text)}
+.sum-highlight .sum-val{
+  color:var(--primary);font-family:'Syne',sans-serif;
+  font-size:1.2rem;font-weight:800;
+}
+
+.modal-ft{
+  padding:20px 32px 28px;
+  display:flex;gap:12px;justify-content:flex-end;
+  position:sticky;bottom:0;
+  background:linear-gradient(0deg,var(--bg-glass) 0%,rgba(255,255,255,0.95) 100%);
+  border-top:1px solid var(--border-glass);
+  margin-top:22px;
+  backdrop-filter:var(--blur-md);
+}
+
+/* =============================================
+   RIDE DETAIL MODAL - Glass Elements
+   ============================================= */
+.detail-map-area{
+  height:220px;border-radius:var(--radius-lg);
+  overflow:hidden;margin-bottom:20px;
+  border:1px solid var(--border-glass);
+  box-shadow:var(--shadow-sm);
+}
+#detailMapEl{width:100%;height:100%}
+.detail-driver-row{
+  display:flex;align-items:center;gap:16px;
+  padding:18px;
+  background:var(--bg-glass);
+  border-radius:var(--radius);
+  margin-bottom:18px;
+  border:1px solid var(--border-glass);
+  backdrop-filter:var(--blur-sm);
+}
+.detail-av{
+  width:60px;height:60px;border-radius:50%;
+  background:linear-gradient(135deg,var(--primary) 0%,var(--primary-light) 50%,var(--primary-lighter) 100%);
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-family:'Syne',sans-serif;
+  font-size:1.4rem;font-weight:800;flex-shrink:0;
+  box-shadow:0 8px 24px var(--primary-glow),0 0 0 3px rgba(255,255,255,0.3) inset;
+}
+.detail-driver-info h3{
+  font-family:'Syne',sans-serif;font-weight:700;
+  font-size:1.1rem;color:var(--text);margin-bottom:4px;
+}
+.detail-driver-info p{font-size:0.88rem;color:var(--text-muted)}
+.detail-stats-row{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  gap:12px;margin-bottom:18px;
+}
+.d-stat{
+  background:var(--bg-glass);
+  border:1px solid var(--border-glass);
+  border-radius:var(--radius);
+  padding:16px;text-align:center;
+  backdrop-filter:var(--blur-sm);
+  transition:all 0.3s var(--ease-spring);
+}
+.d-stat:hover{
+  transform:translateY(-4px);
+  box-shadow:var(--shadow-sm);
+  backdrop-filter:var(--blur-md);
+}
+.d-stat .n{
+  font-family:'Syne',sans-serif;
+  font-size:1.4rem;font-weight:800;
+  background:linear-gradient(135deg,var(--primary) 0%,var(--primary-light) 100%);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+.d-stat .l{font-size:0.75rem;color:var(--text-muted);margin-top:4px}
+.route-visual{
+  padding:18px;
+  background:var(--bg-glass);
+  border:1px solid var(--border-glass);
+  border-radius:var(--radius);
+  margin-bottom:18px;
+  backdrop-filter:var(--blur-sm);
+}
+.rv-row{
+  display:flex;align-items:center;gap:10px;
+  font-size:0.85rem;
+}
+.rv-dot{
+  width:10px;height:10px;border-radius:50%;flex-shrink:0;
+}
+.rv-line{
+  width:2px;height:24px;background:var(--border-2);
+  margin-left:4px;margin-right:4px;
+}
+
+/* =============================================
+   TOAST - Glass Notification
+   ============================================= */
+.toast{
+  position:fixed;bottom:32px;left:50%;
+  transform:translateX(-50%) translateY(100px);
+  background:var(--bg-glass-dark);
+  color:#fff;
+  padding:14px 28px;border-radius:var(--radius-full);
+  font-size:0.9rem;font-weight:600;
+  z-index:9999;
+  transition:all 0.5s var(--ease-spring);
+  box-shadow:0 12px 40px rgba(0,0,0,0.3),var(--shadow-glass),0 0 0 1px rgba(255,255,255,0.1) inset;
+  pointer-events:none;
+  white-space:nowrap;
+  backdrop-filter:var(--blur-lg);
+  border:1px solid rgba(255,255,255,0.1);
+}
+.toast.show{
+  transform:translateX(-50%) translateY(0);
+  animation:toastBounce 0.6s var(--ease-spring);
+}
+@keyframes toastBounce{
+  0%{transform:translateX(-50%) translateY(100px)}
+  60%{transform:translateX(-50%) translateY(-8px)}
+  100%{transform:translateX(-50%) translateY(0)}
+}
+.toast.ok{
+  background:rgba(16,185,129,0.9);
+  border-color:rgba(255,255,255,0.2);
+  box-shadow:0 12px 40px rgba(16,185,129,0.3),0 0 0 1px rgba(255,255,255,0.2) inset;
+}
+.toast.err{
+  background:rgba(239,68,68,0.9);
+  border-color:rgba(255,255,255,0.2);
+  box-shadow:0 12px 40px rgba(239,68,68,0.3),0 0 0 1px rgba(255,255,255,0.2) inset;
+}
+
+/* =============================================
+   FOOTER
+   ============================================= */
+footer{
+  background:var(--text);
+  color:rgba(255,255,255,0.5);
+  padding:60px 5% 36px;
+}
+.footer-top{
+  display:grid;grid-template-columns:1fr 1fr 1fr;
+  gap:40px;margin-bottom:48px;
+}
+.footer-brand .logo{
+  font-family:'Syne',sans-serif;
+  font-size:1.4rem;font-weight:800;
+  color:#fff;margin-bottom:10px;
+}
+.footer-brand p{font-size:0.83rem;line-height:1.65;max-width:240px}
+.footer-col h4{
+  font-family:'Syne',sans-serif;
+  font-size:0.82rem;font-weight:700;
+  letter-spacing:1px;text-transform:uppercase;
+  color:rgba(255,255,255,0.4);margin-bottom:14px;
+}
+.footer-col ul{list-style:none;display:flex;flex-direction:column;gap:9px}
+.footer-col li a{
+  font-size:0.84rem;color:rgba(255,255,255,0.5);
+  transition:color 0.2s;
+}
+.footer-col li a:hover{color:#fff}
+.footer-bottom{
+  padding-top:24px;border-top:1px solid rgba(255,255,255,0.1);
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:12px;
+  font-size:0.78rem;
+}
+.footer-badges{display:flex;gap:10px;flex-wrap:wrap}
+.f-badge{
+  padding:4px 12px;border-radius:50px;
+  background:rgba(255,255,255,0.07);
+  color:rgba(255,255,255,0.5);
+  font-size:0.72rem;font-weight:600;
+}
+
+/* =============================================
+   REVEAL ANIMATIONS - Enhanced Scroll Effects
+   ============================================= */
+.reveal{
+  opacity:0;
+  transform:translateY(40px) scale(0.96);
+  transition:opacity 0.8s var(--ease-out),transform 0.8s var(--ease-spring);
+  will-change:transform,opacity;
+}
+.reveal.vis{
+  opacity:1;
+  transform:translateY(0) scale(1);
+}
+
+/* Stagger delays with easing */
+.r1{transition-delay:0.08s}
+.r2{transition-delay:0.16s}
+.r3{transition-delay:0.24s}
+.r4{transition-delay:0.32s}
+.r5{transition-delay:0.40s}
+.r6{transition-delay:0.48s}
+
+/* Reveal from left */
+.reveal-left{
+  opacity:0;
+  transform:translateX(-60px);
+  transition:opacity 0.8s var(--ease-out),transform 0.8s var(--ease-spring);
+}
+.reveal-left.vis{
+  opacity:1;
+  transform:translateX(0);
+}
+
+/* Reveal from right */
+.reveal-right{
+  opacity:0;
+  transform:translateX(60px);
+  transition:opacity 0.8s var(--ease-out),transform 0.8s var(--ease-spring);
+}
+.reveal-right.vis{
+  opacity:1;
+  transform:translateX(0);
+}
+
+/* Scale reveal */
+.reveal-scale{
+  opacity:0;
+  transform:scale(0.85);
+  transition:opacity 0.7s var(--ease-out),transform 0.7s var(--ease-spring);
+}
+.reveal-scale.vis{
+  opacity:1;
+  transform:scale(1);
+}
+
+/* Blur reveal for glass elements */
+.reveal-blur{
+  opacity:0;
+  filter:blur(10px);
+  transform:translateY(30px);
+  transition:opacity 0.9s var(--ease-out),transform 0.9s var(--ease-spring),filter 0.9s var(--ease-out);
+}
+.reveal-blur.vis{
+  opacity:1;
+  filter:blur(0);
+  transform:translateY(0);
+}
+
+/* Float animation for decorative elements */
+@keyframes float{
+  0%,100%{transform:translateY(0) rotate(0deg)}
+  50%{transform:translateY(-20px) rotate(2deg)}
+}
+.animate-float{
+  animation:float 6s ease-in-out infinite;
+}
+
+/* Gentle pulse for attention elements */
+@keyframes gentlePulse{
+  0%,100%{opacity:0.6;transform:scale(1)}
+  50%{opacity:1;transform:scale(1.05)}
+}
+.animate-pulse{
+  animation:gentlePulse 4s ease-in-out infinite;
+}
+
+/* =============================================
+   RESPONSIVE - Mobile Glass Optimization
+   ============================================= */
+@media(max-width:1100px){
+  .hero-map-card{
+    width:min(360px,38vw);
+    height:420px;
+  }
+}
+@media(max-width:900px){
+  nav{padding:12px 20px}
+  nav.scrolled{padding:10px 20px}
+  .nav-links{display:none}
+  .hero-map-card{display:none}
+  .search-wrapper{
+    grid-template-columns:1fr;
+    height:auto;
+    backdrop-filter:var(--blur-sm);
+  }
+  .search-panel{
+    border-right:none;
+    border-bottom:1px solid var(--border-glass);
+    backdrop-filter:none;
+  }
+  .map-pane{height:300px}
+  .results-grid{grid-template-columns:1fr}
+  .filter-card{
+    position:static;
+    backdrop-filter:var(--blur-sm);
+  }
+  .footer-top{grid-template-columns:1fr}
+  .footer-col:not(.footer-brand){display:none}
+  
+  /* Reduce blur on mobile for performance */
+  .feat-card,
+  .step-item,
+  .filter-card,
+  .ride-card,
+  .results-bar{
+    backdrop-filter:none;
+  }
+  .feat-card:hover,
+  .step-item:hover,
+  .filter-card:hover{
+    backdrop-filter:none;
+  }
+}
+@media(max-width:600px){
+  #hero{padding:100px 5% 60px}
+  .hero-metrics{gap:24px}
+  .hero-btns{flex-direction:column;align-items:flex-start}
+  .hero-btns .btn{width:100%;justify-content:center}
+  .f-row{grid-template-columns:1fr}
+  .detail-stats-row{grid-template-columns:repeat(3,1fr)}
+  .modal-hd,.modal-body,.modal-ft{padding-left:20px;padding-right:20px}
+  .step-bar{padding:18px 20px}
+  .veh-grid{grid-template-columns:1fr}
+  
+  /* Disable complex animations on mobile */
+  body::before{animation:none}
+  .hero-bg{animation:none}
+}
+
+/* Respect reduced motion preference */
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    animation-duration:0.01ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:0.01ms !important;
+  }
+  .reveal,.reveal-left,.reveal-right,.reveal-scale,.reveal-blur{
+    opacity:1;
+    transform:none;
+    filter:none;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     CINEMATIC INTRO
+     ============================================================ -->
+<div id="intro">
+  <canvas id="routeCanvas"></canvas>
+  <div class="intro-fog"></div>
+  <div class="intro-center" id="introCenter">
+    <div class="intro-wordmark">CampusRide</div>
+    <div class="intro-tagline">Smarter Rides.&nbsp; Less Cost.&nbsp; More Connections.</div>
+  </div>
+  <div class="intro-scroll" id="introScroll">
+    <span>scroll</span>
+    <div class="scroll-chevron"></div>
+  </div>
+</div>
+
+<!-- ============================================================
+     MAIN APP
+     ============================================================ -->
+<div id="app">
+
+  <!-- NAV -->
+  <nav id="mainNav">
+    <a class="nav-brand" href="#"><em>Campus</em>Ride</a>
+    <ul class="nav-links">
+      <li><a href="#features">Features</a></li>
+      <li><a href="#how-it-works">How it Works</a></li>
+      <li><a href="#search-section">Find Ride</a></li>
+    </ul>
+    <div class="nav-actions">
+      <button class="btn btn-ghost" onclick="openAddRide()">+ Add Ride</button>
+      <button class="btn btn-primary" onclick="scrollTo('search-section')">Find Ride →</button>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section id="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-grid-bg"></div>
+    <div class="hero-content reveal">
+      <div class="hero-pill">
+        <div class="hero-pill-dot"></div>
+        <span>Smart Campus Transportation Network</span>
+      </div>
+      <h1 class="hero-title">Travel <span class="grad">Smarter</span><br>to Your Campus</h1>
+      <p class="hero-desc">Save fuel, reduce costs, and share rides with nearby students. The intelligent carpool network built for college life in Visakhapatnam.</p>
+      <div class="hero-btns">
+        <button class="btn btn-glow btn-lg" onclick="openAddRide()">+ Add Ride</button>
+        <button class="btn btn-ghost btn-lg" onclick="scrollTo('search-section')">🔍 Find a Ride</button>
+      </div>
+      <div class="hero-metrics">
+        <div class="metric">
+          <div class="metric-val" data-count="2400">0</div>
+          <div class="metric-label">Active Riders</div>
+        </div>
+        <div class="metric">
+          <div class="metric-val" data-prefix="₹" data-count="180">0</div>
+          <div class="metric-label">Avg. Monthly Savings</div>
+        </div>
+        <div class="metric">
+          <div class="metric-val" data-count="12" data-suffix="+">0</div>
+          <div class="metric-label">Campuses Covered</div>
+        </div>
+      </div>
+    </div>
+    <div class="hero-map-card">
+      <div id="heroMapEl"></div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section id="features">
+    <div class="section-eyebrow reveal">Why CampusRide</div>
+    <h2 class="section-heading reveal r1">Everything you need<br>to ride smarter</h2>
+    <p class="section-sub reveal r2">A platform designed from the ground up for college students who want to save money, time, and travel efficiently together.</p>
+    <div class="features-grid">
+      <div class="feat-card reveal r1">
+        <div class="feat-glow"></div>
+        <div class="feat-icon-wrap">🚗</div>
+        <div class="feat-name">Smart Ride Matching</div>
+        <div class="feat-desc">AI-powered matching connects you with the most compatible co-riders based on route, timing, and preferences.</div>
+      </div>
+      <div class="feat-card reveal r2">
+        <div class="feat-glow"></div>
+        <div class="feat-icon-wrap">🗺</div>
+        <div class="feat-name">Route Optimization</div>
+        <div class="feat-desc">Intelligent routing calculates the most efficient path, saving everyone fuel costs and commute time.</div>
+      </div>
+      <div class="feat-card reveal r3">
+        <div class="feat-glow"></div>
+        <div class="feat-icon-wrap">💸</div>
+        <div class="feat-name">Fair Cost Sharing</div>
+        <div class="feat-desc">Automatic cost calculation splits fuel and toll expenses fairly. Transparent pricing, no surprises.</div>
+      </div>
+      <div class="feat-card reveal r4">
+        <div class="feat-glow"></div>
+        <div class="feat-icon-wrap">🔐</div>
+        <div class="feat-name">Verified Students Only</div>
+        <div class="feat-desc">Every user verified with their college ID. Ride confidently in a trusted, closed network of students.</div>
+      </div>
+      <div class="feat-card reveal r5">
+        <div class="feat-glow"></div>
+        <div class="feat-icon-wrap">⚡</div>
+        <div class="feat-name">Real-Time Updates</div>
+        <div class="feat-desc">Live seat availability, location tracking, and instant notifications keep you informed every step of the way.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section id="how-it-works">
+    <div class="section-eyebrow reveal">Simple Process</div>
+    <h2 class="section-heading reveal r1">Up and riding in<br>under 2 minutes</h2>
+    <div class="steps-grid">
+      <div class="step-item reveal r1">
+        <div class="step-num">01</div>
+        <div class="step-title">Search Your Route</div>
+        <div class="step-desc">Enter your pickup location and select your college destination.</div>
+      </div>
+      <div class="step-item reveal r2">
+        <div class="step-num">02</div>
+        <div class="step-title">Browse Rides</div>
+        <div class="step-desc">View matching rides with pricing, timing, vehicle type, and driver details.</div>
+      </div>
+      <div class="step-item reveal r3">
+        <div class="step-num">03</div>
+        <div class="step-title">Book Instantly</div>
+        <div class="step-desc">Select your preferred ride and confirm. Seat is reserved for you.</div>
+      </div>
+      <div class="step-item reveal r4">
+        <div class="step-num">04</div>
+        <div class="step-title">Ride Together</div>
+        <div class="step-desc">Meet at the pickup point, share the ride, and save money together.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SEARCH SECTION -->
+  <section id="search-section">
+    <div style="text-align:center;margin-bottom:44px">
+      <div class="section-eyebrow reveal">Find Your Ride</div>
+      <h2 class="section-heading reveal r1">Where are you<br>headed today?</h2>
+    </div>
+    <div class="search-wrapper reveal">
+      <div class="search-panel">
+        <div class="search-panel-title">Plan Your Ride</div>
+        <div>
+          <label class="input-label">📍 From Address</label>
+          <div class="input-wrap">
+            <span class="input-ico">📍</span>
+            <input class="s-input" id="fromInput" type="text" placeholder="e.g. MVP Colony, Visakhapatnam">
+          </div>
+          <button class="loc-btn" onclick="useCurrentLocation()">📡 Use Current Location</button>
+        </div>
+        <div>
+          <label class="input-label">🎓 To College</label>
+          <div class="chips" id="collegeChips">
+            <div class="chip" data-college="VIIT" onclick="selectCollege(this)">VIIT</div>
+            <div class="chip" data-college="GITAM" onclick="selectCollege(this)">GITAM</div>
+            <div class="chip" data-college="ANITS" onclick="selectCollege(this)">ANITS</div>
+            <div class="chip" data-college="Andhra University" onclick="selectCollege(this)">Andhra University</div>
+          </div>
+        </div>
+        <div>
+          <label class="input-label">🕐 Departure Time</label>
+          <div class="input-wrap">
+            <span class="input-ico">🕐</span>
+            <input class="s-input" id="timeInput" type="time" value="08:00" style="padding-left:42px">
+          </div>
+        </div>
+        <div>
+          <label class="input-label">🚗 Vehicle Type</label>
+          <div class="chips">
+            <div class="chip" data-v="all" onclick="quickFilter(this)" id="qAll">All</div>
+            <div class="chip" data-v="bike" onclick="quickFilter(this)" id="qBike">🏍 Bike</div>
+            <div class="chip" data-v="car" onclick="quickFilter(this)" id="qCar">🚗 Car</div>
+          </div>
+        </div>
+        <button class="btn btn-glow" style="width:100%;justify-content:center;padding:13px" onclick="doSearch()">
+          🔍 Search Rides
+        </button>
+      </div>
+      <div class="map-pane" id="mapPane">
+        <div id="heroMapEl2" style="width:100%;height:100%"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RESULTS SECTION -->
+  <section id="results-section">
+    <div class="results-grid">
+
+      <!-- FILTER PANEL -->
+      <div class="filter-card">
+        <div class="filter-head">
+          Filters
+          <button class="filter-clear" onclick="clearFilters()">Clear all</button>
+        </div>
+        <div class="filter-group">
+          <div class="fg-title">Vehicle Type</div>
+          <div class="f-opts">
+            <button class="f-btn on" data-fv="all" onclick="applyFilter('vehicle',this)">All</button>
+            <button class="f-btn" data-fv="bike" onclick="applyFilter('vehicle',this)">🏍 Bike</button>
+            <button class="f-btn" data-fv="car" onclick="applyFilter('vehicle',this)">🚗 Car</button>
+          </div>
+        </div>
+        <div class="filter-group">
+          <div class="fg-title">Gender Preference</div>
+          <div class="f-opts">
+            <button class="f-btn on" data-fv="any" onclick="applyFilter('gender',this)">Any</button>
+            <button class="f-btn" data-fv="male" onclick="applyFilter('gender',this)">👨 Male</button>
+            <button class="f-btn" data-fv="female" onclick="applyFilter('gender',this)">👩 Female</button>
+          </div>
+        </div>
+        <div class="filter-group">
+          <div class="fg-title">Max Price (₹/seat)</div>
+          <input type="range" class="price-slider" id="priceSlider" min="20" max="200" value="200" oninput="applyPriceFilter(this.value)">
+          <div class="price-labels">₹20 <strong id="priceVal">₹200</strong> ₹200+</div>
+        </div>
+        <div class="filter-group">
+          <div class="fg-title">Departure Time</div>
+          <div class="f-opts">
+            <button class="f-btn on" data-fv="any" onclick="applyFilter('time',this)">Any</button>
+            <button class="f-btn" data-fv="morning" onclick="applyFilter('time',this)">🌅 Morning</button>
+            <button class="f-btn" data-fv="afternoon" onclick="applyFilter('time',this)">☀️ Afternoon</button>
+          </div>
+        </div>
+        <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="openAddRide()">+ Add Your Ride</button>
+      </div>
+
+      <!-- RESULTS RIGHT -->
+      <div class="results-right">
+        <div class="results-bar">
+          <div class="results-label">Showing <b id="resultsCount">0</b> rides</div>
+          <div style="display:flex;gap:8px;font-size:0.8rem;color:var(--text-muted)">
+            <span>Sort by:</span>
+            <select style="border:none;background:none;color:var(--primary);font-weight:600;cursor:pointer;outline:none" onchange="sortRides(this.value)">
+              <option value="recommended">Recommended</option>
+              <option value="price_asc">Price ↑</option>
+              <option value="price_desc">Price ↓</option>
+              <option value="rating">Rating</option>
+            </select>
+          </div>
+        </div>
+        <div class="results-map-card">
+          <div id="resultsMapEl"></div>
+        </div>
+        <div class="rides-list" id="ridesList"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-top">
+      <div class="footer-brand footer-col">
+        <div class="logo">CampusRide</div>
+        <p>The intelligent carpool network for Visakhapatnam's college community. Ride smarter, spend less, connect more.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Platform</h4>
+        <ul>
+          <li><a href="#">Find a Ride</a></li>
+          <li><a href="#">Add a Ride</a></li>
+          <li><a href="#">How it Works</a></li>
+          <li><a href="#">Safety</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="#">About</a></li>
+          <li><a href="#">Blog</a></li>
+          <li><a href="#">Privacy Policy</a></li>
+          <li><a href="#">Terms of Service</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2025 CampusRide. All rights reserved.</span>
+      <div class="footer-badges">
+        <div class="f-badge">🔐 Verified Network</div>
+        <div class="f-badge">🌱 Eco-Friendly</div>
+        <div class="f-badge">⚡ Real-Time</div>
+      </div>
+    </div>
+  </footer>
+
+</div><!-- #app -->
+
+<!-- ============================================================
+     ADD RIDE MODAL
+     ============================================================ -->
+<div class="overlay" id="addRideOverlay">
+  <div class="modal-box">
+    <div class="modal-hd">
+      <div class="modal-title">Add Your Ride</div>
+      <button class="modal-close" onclick="closeModal('addRideOverlay')">✕</button>
+    </div>
+
+    <!-- Step Bar -->
+    <div class="step-bar" id="stepBar">
+      <div class="s-dot act" id="sd1">1</div>
+      <div class="s-line" id="sl1"></div>
+      <div class="s-dot" id="sd2">2</div>
+      <div class="s-line" id="sl2"></div>
+      <div class="s-dot" id="sd3">3</div>
+      <div class="s-line" id="sl3"></div>
+      <div class="s-dot" id="sd4">4</div>
+      <div class="s-line" id="sl4"></div>
+      <div class="s-dot" id="sd5">5</div>
+    </div>
+
+    <div class="modal-body">
+      <!-- Step 1: Vehicle Type -->
+      <div class="s-content act" id="sc1">
+        <div class="s-head">What are you offering?</div>
+        <div class="veh-grid">
+          <div class="veh-opt sel" id="vBike" onclick="selectVehicle('bike')">
+            <div class="veh-ico">🏍</div>
+            <div class="veh-lbl">Bike</div>
+          </div>
+          <div class="veh-opt" id="vCar" onclick="selectVehicle('car')">
+            <div class="veh-ico">🚗</div>
+            <div class="veh-lbl">Car</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2: Route -->
+      <div class="s-content" id="sc2">
+        <div class="s-head">Set your route</div>
+        <div class="f-group">
+          <label class="f-label">📍 From Address</label>
+          <input class="f-input" id="addFrom" type="text" placeholder="Your pickup location">
+        </div>
+        <div class="f-group">
+          <label class="f-label">🎓 To College</label>
+          <select class="f-select" id="addCollege">
+            <option value="">Select college</option>
+            <option>VIIT</option>
+            <option>GITAM</option>
+            <option>ANITS</option>
+            <option>Andhra University</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Step 3: Details -->
+      <div class="s-content" id="sc3">
+        <div class="s-head">Ride details</div>
+        <div class="f-row">
+          <div class="f-group">
+            <label class="f-label">📅 Date</label>
+            <input class="f-input" id="addDate" type="date">
+          </div>
+          <div class="f-group">
+            <label class="f-label">🕐 Time</label>
+            <input class="f-input" id="addTime" type="time" value="08:00">
+          </div>
+        </div>
+        <div class="f-row">
+          <div class="f-group">
+            <label class="f-label">💺 Seats Available</label>
+            <select class="f-select" id="addSeats">
+              <option>1</option><option>2</option><option>3</option><option>4</option>
+            </select>
+          </div>
+          <div class="f-group">
+            <label class="f-label">💰 Price per Seat (₹)</label>
+            <input class="f-input" id="addPrice" type="number" placeholder="50" min="10" max="500">
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 4: Personal Info -->
+      <div class="s-content" id="sc4">
+        <div class="s-head">Your details</div>
+        <div class="f-group">
+          <label class="f-label">👤 Full Name</label>
+          <input class="f-input" id="addName" type="text" placeholder="Your name">
+        </div>
+        <div class="f-group">
+          <label class="f-label">📱 Contact Number</label>
+          <input class="f-input" id="addPhone" type="tel" placeholder="+91 9876543210">
+        </div>
+        <div class="f-group">
+          <label class="f-label">⚥ Gender</label>
+          <div class="gender-row">
+            <div class="gender-opt sel" id="gMale" onclick="selGender('male')">👨 Male</div>
+            <div class="gender-opt" id="gFemale" onclick="selGender('female')">👩 Female</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 5: Confirm -->
+      <div class="s-content" id="sc5">
+        <div class="s-head">Review your ride</div>
+        <div class="summary-block" id="rideSummary"></div>
+        <div style="margin-top:14px;padding:12px;background:rgba(16,185,129,0.06);border-radius:var(--radius);border:1px solid rgba(16,185,129,0.2);font-size:0.82rem;color:#065F46">
+          ✅ Your ride will be visible to students heading to your college. They can book a seat and you share the cost.
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-ft">
+      <button class="btn btn-ghost" id="stepBack" onclick="stepNav(-1)" style="display:none">← Back</button>
+      <button class="btn btn-primary" id="stepNext" onclick="stepNav(1)">Next →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     RIDE DETAIL MODAL
+     ============================================================ -->
+<div class="overlay" id="detailOverlay">
+  <div class="modal-box wide">
+    <div class="modal-hd">
+      <div class="modal-title" id="detailTitle">Ride Details</div>
+      <button class="modal-close" onclick="closeModal('detailOverlay')">✕</button>
+    </div>
+    <div class="modal-body" id="detailBody" style="padding-bottom:0"></div>
+    <div class="modal-ft">
+      <button class="btn btn-ghost" onclick="closeModal('detailOverlay')">Close</button>
+      <button class="btn btn-success" onclick="bookRide()">🚀 Book This Ride</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+/* ============================================================
+   DATA
+   ============================================================ */
+const COLLEGES = {
+  'VIIT':              { lat: 17.6868, lng: 83.2185, area:'Duvvada' },
+  'GITAM':             { lat: 17.7714, lng: 83.3713, area:'Rushikonda' },
+  'ANITS':             { lat: 17.8603, lng: 83.3706, area:'Sangivalasa' },
+  'Andhra University': { lat: 17.7321, lng: 83.3206, area:'Waltair' }
+};
+
+const LOCATIONS = [
+  { name:'MVP Colony',      lat:17.7231, lng:83.3126 },
+  { name:'Dwaraka Nagar',   lat:17.7173, lng:83.2981 },
+  { name:'Rushikonda',      lat:17.7714, lng:83.3713 },
+  { name:'Gajuwaka',        lat:17.6760, lng:83.2069 },
+  { name:'Gopalapatnam',    lat:17.7478, lng:83.2368 },
+  { name:'Siripuram',       lat:17.7223, lng:83.3133 },
+  { name:'Asilmetta',       lat:17.7201, lng:83.3045 },
+  { name:'PM Palem',        lat:17.7604, lng:83.3268 },
+  { name:'Murali Nagar',    lat:17.7368, lng:83.2888 },
+  { name:'Kommadi',         lat:17.7927, lng:83.3868 }
+];
+
+const RIDES_DATA = [
+  { id:1, driver:'Ravi Kumar',    initials:'RK', vehicle:'bike', from:'MVP Colony',    to:'GITAM',             time:'8:30 AM', price:35, seats:1, totalSeats:1, rating:4.8, gender:'male',   popular:true,  recommended:false, lat:17.7231, lng:83.3126 },
+  { id:2, driver:'Priya Sharma',  initials:'PS', vehicle:'car',  from:'Siripuram',     to:'Andhra University', time:'9:00 AM', price:50, seats:2, totalSeats:3, rating:4.9, gender:'female', popular:false, recommended:true,  lat:17.7223, lng:83.3133 },
+  { id:3, driver:'Arjun Reddy',   initials:'AR', vehicle:'car',  from:'Gopalapatnam',  to:'GITAM',             time:'8:00 AM', price:45, seats:3, totalSeats:4, rating:4.7, gender:'male',   popular:false, recommended:false, lat:17.7478, lng:83.2368 },
+  { id:4, driver:'Sneha Rao',     initials:'SR', vehicle:'bike', from:'Dwaraka Nagar', to:'ANITS',             time:'7:45 AM', price:25, seats:1, totalSeats:1, rating:4.6, gender:'female', popular:false, recommended:false, lat:17.7173, lng:83.2981 },
+  { id:5, driver:'Kiran Varma',   initials:'KV', vehicle:'car',  from:'PM Palem',      to:'VIIT',              time:'8:15 AM', price:60, seats:2, totalSeats:4, rating:4.5, gender:'male',   popular:true,  recommended:false, lat:17.7604, lng:83.3268 },
+  { id:6, driver:'Lakshmi Devi',  initials:'LD', vehicle:'bike', from:'Asilmetta',     to:'Andhra University', time:'8:45 AM', price:20, seats:1, totalSeats:1, rating:5.0, gender:'female', popular:false, recommended:true,  lat:17.7201, lng:83.3045 },
+  { id:7, driver:'Venkat Sai',    initials:'VS', vehicle:'car',  from:'Murali Nagar',  to:'ANITS',             time:'9:15 AM', price:55, seats:1, totalSeats:3, rating:4.3, gender:'male',   popular:false, recommended:false, lat:17.7368, lng:83.2888 },
+  { id:8, driver:'Deepika Roy',   initials:'DR', vehicle:'car',  from:'Kommadi',       to:'GITAM',             time:'8:00 AM', price:40, seats:3, totalSeats:4, rating:4.7, gender:'female', popular:false, recommended:true,  lat:17.7927, lng:83.3868 },
+  { id:9, driver:'Sai Charan',    initials:'SC', vehicle:'bike', from:'Gajuwaka',      to:'VIIT',              time:'7:30 AM', price:18, seats:1, totalSeats:1, rating:4.4, gender:'male',   popular:false, recommended:false, lat:17.6760, lng:83.2069 },
+  { id:10,driver:'Mounika Patel', initials:'MP', vehicle:'car',  from:'Rushikonda',    to:'ANITS',             time:'9:30 AM', price:70, seats:2, totalSeats:4, rating:4.8, gender:'female', popular:true,  recommended:false, lat:17.7714, lng:83.3713 },
+];
+
+/* ============================================================
+   STATE
+   ============================================================ */
+let state = {
+  filters: { vehicle:'all', gender:'any', price:200, time:'any' },
+  selectedCollege: '',
+  quickVehicle: 'all',
+  currentStep: 1,
+  formData: { vehicle:'bike', gender:'male' },
+  currentRide: null,
+  mapsInit: { hero:false, heroSearch:false, results:false, detail:false }
+};
+
+let heroMap, heroSearchMap, resultsMap, detailMap;
+let resultsMarkers = [];
+
+/* ============================================================
+   CINEMATIC INTRO
+   ============================================================ */
+(function initIntro(){
+  const canvas = document.getElementById('routeCanvas');
+  const ctx    = canvas.getContext('2d');
+  let nodes = [], particles = [], W, H;
+
+  function resize(){
+    W = canvas.width  = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+    initNodes();
+  }
+
+  function initNodes(){
+    nodes = [];
+    const N = Math.min(18, Math.floor(W/80));
+    for(let i=0;i<N;i++){
+      nodes.push({
+        x: Math.random()*W,
+        y: Math.random()*H,
+        vx:(Math.random()-0.5)*0.35,
+        vy:(Math.random()-0.5)*0.35
+      });
+    }
+    particles = [];
+  }
+
+  function addParticle(){
+    if(particles.length > 120) return;
+    const a = nodes[Math.floor(Math.random()*nodes.length)];
+    const b = nodes[Math.floor(Math.random()*nodes.length)];
+    if(a===b) return;
+    particles.push({ x:a.x, y:a.y, tx:b.x, ty:b.y, ox:a.x, oy:a.y, p:0, speed: 0.004+Math.random()*0.006 });
+  }
+
+  const BASE_COLOR = '101,82,208';
+  let frame = 0;
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle = '#080811';
+    ctx.fillRect(0,0,W,H);
+
+    // Move nodes
+    nodes.forEach(n=>{
+      n.x += n.vx; n.y += n.vy;
+      if(n.x<0||n.x>W) n.vx*=-1;
+      if(n.y<0||n.y>H) n.vy*=-1;
+    });
+
+    // Draw connections
+    for(let i=0;i<nodes.length;i++){
+      for(let j=i+1;j<nodes.length;j++){
+        const dx=nodes[i].x-nodes[j].x, dy=nodes[i].y-nodes[j].y;
+        const d=Math.sqrt(dx*dx+dy*dy);
+        if(d<200){
+          const a=(1-d/200)*0.18;
+          ctx.strokeStyle=`rgba(${BASE_COLOR},${a})`;
+          ctx.lineWidth=1;
+          ctx.beginPath();
+          ctx.moveTo(nodes[i].x,nodes[i].y);
+          ctx.lineTo(nodes[j].x,nodes[j].y);
+          ctx.stroke();
+        }
+      }
+    }
+
+    // Draw nodes
+    nodes.forEach(n=>{
+      ctx.beginPath();
+      ctx.arc(n.x,n.y,3,0,Math.PI*2);
+      ctx.fillStyle=`rgba(${BASE_COLOR},0.5)`;
+      ctx.fill();
+    });
+
+    // Move & draw particles (animated route lines)
+    particles.forEach((p,i)=>{
+      p.p = Math.min(1, p.p + p.speed);
+      const cx = p.ox + (p.tx-p.ox)*p.p;
+      const cy = p.oy + (p.ty-p.oy)*p.p;
+
+      // Trail
+      const trail = 0.18;
+      const tx2 = p.ox + (p.tx-p.ox)*Math.max(0,p.p-trail);
+      const ty2 = p.oy + (p.ty-p.oy)*Math.max(0,p.p-trail);
+
+      const grd = ctx.createLinearGradient(tx2,ty2,cx,cy);
+      grd.addColorStop(0,`rgba(139,124,232,0)`);
+      grd.addColorStop(1,`rgba(139,124,232,0.9)`);
+      ctx.strokeStyle=grd;
+      ctx.lineWidth=1.5;
+      ctx.beginPath();
+      ctx.moveTo(tx2,ty2);
+      ctx.lineTo(cx,cy);
+      ctx.stroke();
+
+      // Head dot
+      ctx.beginPath();
+      ctx.arc(cx,cy,3,0,Math.PI*2);
+      ctx.fillStyle=`rgba(196,186,245,0.95)`;
+      ctx.fill();
+
+      if(p.p>=1) particles.splice(i,1);
+    });
+
+    if(frame%30===0) addParticle();
+    frame++;
+    requestAnimationFrame(draw);
+  }
+
+  window.addEventListener('resize', resize);
+  resize();
+  draw();
+
+  // Show intro content after lines animate
+  setTimeout(()=>{
+    document.getElementById('introCenter').classList.add('show');
+    document.getElementById('introScroll').classList.add('show');
+  }, 1200);
+
+  // Exit intro
+  function exitIntro(){
+    document.getElementById('intro').classList.add('out');
+    document.getElementById('app').classList.add('show');
+    setTimeout(()=>{
+      document.getElementById('intro').style.display='none';
+    }, 1400);
+    window.removeEventListener('scroll', exitIntro);
+    document.removeEventListener('click', exitIntro);
+  }
+
+  // Auto-exit after 4.5s or on scroll/click
+  setTimeout(()=>{
+    window.addEventListener('scroll', exitIntro, {once:true});
+    document.addEventListener('click', exitIntro, {once:true});
+  }, 2800);
+  setTimeout(exitIntro, 4800);
+})();
+
+/* ============================================================
+   MAPS
+   ============================================================ */
+function initHeroMap(){
+  if(state.mapsInit.hero) return;
+  state.mapsInit.hero = true;
+  const el = document.getElementById('heroMapEl');
+  if(!el) return;
+
+  heroMap = L.map('heroMapEl', { zoomControl:false, scrollWheelZoom:false, dragging:false, attributionControl:false });
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{maxZoom:18}).addTo(heroMap);
+  heroMap.setView([17.7321, 83.3206], 12);
+
+  // Add college markers
+  const icon = (txt) => L.divIcon({
+    html:`<div style="
+      background:linear-gradient(135deg,#6552D0,#8B7CE8);
+      color:white;padding:4px 10px;border-radius:20px;
+      font-family:'DM Sans',sans-serif;font-size:11px;font-weight:700;
+      box-shadow:0 3px 12px rgba(101,82,208,0.45);
+      white-space:nowrap;
+    ">${txt}</div>`,
+    iconAnchor:[0,0], className:''
+  });
+
+  Object.entries(COLLEGES).forEach(([name, pos])=>{
+    L.marker([pos.lat, pos.lng], {icon: icon(name)}).addTo(heroMap);
+  });
+
+  // Sample route line
+  const routePts = [[17.7231,83.3126],[17.7478,83.3368],[17.7714,83.3713]];
+  L.polyline(routePts, {color:'#6552D0',weight:3,opacity:0.7,dashArray:'6,4'}).addTo(heroMap);
+}
+
+function initHeroSearchMap(){
+  if(state.mapsInit.heroSearch) return;
+  state.mapsInit.heroSearch = true;
+
+  heroSearchMap = L.map('heroMapEl2', { zoomControl:false, scrollWheelZoom:false, attributionControl:false });
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{maxZoom:18}).addTo(heroSearchMap);
+  heroSearchMap.setView([17.7321, 83.3206], 12);
+
+  const mkIcon = L.divIcon({
+    html:`<div style="width:12px;height:12px;background:#6552D0;border-radius:50%;border:2px solid white;box-shadow:0 2px 8px rgba(101,82,208,0.6)"></div>`,
+    iconAnchor:[6,6],className:''
+  });
+  Object.entries(COLLEGES).forEach(([name, pos])=>{
+    L.marker([pos.lat, pos.lng], {icon: mkIcon}).addTo(heroSearchMap)
+      .bindTooltip(name,{permanent:false,direction:'top'});
+  });
+}
+
+function initResultsMap(){
+  if(state.mapsInit.results) return;
+  state.mapsInit.results = true;
+
+  resultsMap = L.map('resultsMapEl', { zoomControl:false, scrollWheelZoom:false, attributionControl:false });
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{maxZoom:18}).addTo(resultsMap);
+  resultsMap.setView([17.7321, 83.3206], 12);
+}
+
+function updateResultsMap(rides){
+  if(!resultsMap) return;
+  resultsMarkers.forEach(m=>m.remove());
+  resultsMarkers = [];
+
+  const bounds = [];
+  rides.forEach(r=>{
+    const icon = L.divIcon({
+      html:`<div style="
+        background:${r.vehicle==='bike'?'#F59E0B':'#6552D0'};
+        color:white;padding:3px 9px;border-radius:16px;
+        font-size:10px;font-weight:700;font-family:'DM Sans',sans-serif;
+        box-shadow:0 2px 10px rgba(0,0,0,0.25);
+        white-space:nowrap;
+      ">₹${r.price}</div>`,
+      iconAnchor:[0,0],className:''
+    });
+    const m = L.marker([r.lat, r.lng], {icon}).addTo(resultsMap)
+      .bindTooltip(`${r.driver} → ${r.to}`,{direction:'top'});
+    resultsMarkers.push(m);
+    bounds.push([r.lat, r.lng]);
+
+    const col = COLLEGES[r.to];
+    if(col) bounds.push([col.lat, col.lng]);
+  });
+
+  if(bounds.length) resultsMap.fitBounds(bounds, {padding:[20,20]});
+}
+
+/* ============================================================
+   UTILITY
+   ============================================================ */
+function scrollTo(id){
+  document.getElementById(id)?.scrollIntoView({behavior:'smooth'});
+}
+function showToast(msg, type=''){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (type?' '+type:'');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(()=>t.classList.remove('show'), 3000);
+}
+
+/* ============================================================
+   SEARCH
+   ============================================================ */
+let selectedCollege = '';
+function selectCollege(el){
+  document.querySelectorAll('#collegeChips .chip').forEach(c=>c.classList.remove('on'));
+  el.classList.add('on');
+  selectedCollege = el.dataset.college;
+}
+function quickFilter(el){
+  document.querySelectorAll('.chips .chip[data-v]').forEach(c=>c.classList.remove('on'));
+  el.classList.add('on');
+  state.quickVehicle = el.dataset.v;
+}
+function useCurrentLocation(){
+  document.getElementById('fromInput').value = 'MVP Colony, Visakhapatnam';
+  showToast('📍 Location set to MVP Colony');
+}
+
+function doSearch(){
+  const from = document.getElementById('fromInput').value.trim();
+  if(!from){ showToast('Please enter your pickup location', 'err'); return; }
+  if(!selectedCollege){ showToast('Please select a college', 'err'); return; }
+
+  // Show skeletons
+  const rs = document.getElementById('results-section');
+  rs.classList.add('on');
+  rs.scrollIntoView({behavior:'smooth'});
+
+  const list = document.getElementById('ridesList');
+  list.innerHTML = [1,2,3].map(()=>`
+    <div class="skel-card">
+      <div style="display:flex;gap:10px;align-items:center">
+        <div class="skel" style="width:42px;height:42px;border-radius:50%;flex-shrink:0"></div>
+        <div style="flex:1">
+          <div class="skel" style="height:14px;width:60%;margin-bottom:7px"></div>
+          <div class="skel" style="height:11px;width:40%"></div>
+        </div>
+        <div class="skel" style="height:24px;width:50px;border-radius:6px"></div>
+      </div>
+      <div class="skel" style="height:36px;margin-top:10px;border-radius:9px"></div>
+      <div style="display:flex;gap:10px;margin-top:10px">
+        <div class="skel" style="height:11px;width:60px"></div>
+        <div class="skel" style="height:11px;width:50px"></div>
+        <div class="skel" style="height:11px;width:55px"></div>
+      </div>
+    </div>
+  `).join('');
+
+  if(!state.mapsInit.results) initResultsMap();
+
+  // Filter by vehicle from quick filter
+  state.filters.vehicle = state.quickVehicle;
+
+  setTimeout(()=>{ renderRides(); }, 900);
+}
+
+/* ============================================================
+   FILTERS
+   ============================================================ */
+function applyFilter(type, el){
+  el.closest('.f-opts').querySelectorAll('.f-btn').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+  state.filters[type] = el.dataset.fv;
+  if(document.getElementById('results-section').classList.contains('on')) renderRides();
+}
+function applyPriceFilter(val){
+  document.getElementById('priceVal').textContent = '₹'+val;
+  state.filters.price = +val;
+  if(document.getElementById('results-section').classList.contains('on')) renderRides();
+}
+function clearFilters(){
+  state.filters = { vehicle:'all', gender:'any', price:200, time:'any' };
+  document.querySelectorAll('.f-btn').forEach(b=>{
+    b.classList.remove('on');
+    if(b.dataset.fv==='all'||b.dataset.fv==='any') b.classList.add('on');
+  });
+  document.getElementById('priceSlider').value = 200;
+  document.getElementById('priceVal').textContent = '₹200';
+  renderRides();
+}
+function sortRides(val){
+  renderRides(val);
+}
+
+function getFilteredRides(sort='recommended'){
+  let rides = [...RIDES_DATA];
+  if(selectedCollege) rides = rides.filter(r=>r.to===selectedCollege);
+  if(state.filters.vehicle!=='all') rides = rides.filter(r=>r.vehicle===state.filters.vehicle);
+  if(state.filters.gender!=='any') rides = rides.filter(r=>r.gender===state.filters.gender || r.gender==='any');
+  rides = rides.filter(r=>r.price<=state.filters.price);
+  if(state.filters.time==='morning') rides = rides.filter(r=>{ const h=parseInt(r.time); return h>=6&&h<12; });
+  if(state.filters.time==='afternoon') rides = rides.filter(r=>{ const h=parseInt(r.time); return h>=12&&h<18; });
+  if(sort==='price_asc') rides.sort((a,b)=>a.price-b.price);
+  else if(sort==='price_desc') rides.sort((a,b)=>b.price-a.price);
+  else if(sort==='rating') rides.sort((a,b)=>b.rating-a.rating);
+  else {
+    // Recommended sort: popular first, then recommended, then rating
+    rides.sort((a,b)=>{
+      const aScore = (a.recommended?3:0)+(a.popular?2:0)+a.rating;
+      const bScore = (b.recommended?3:0)+(b.popular?2:0)+b.rating;
+      return bScore-aScore;
+    });
+  }
+  return rides;
+}
+
+function renderRides(sort='recommended'){
+  const rides = getFilteredRides(sort);
+  const list  = document.getElementById('ridesList');
+  document.getElementById('resultsCount').textContent = rides.length;
+
+  if(!rides.length){
+    list.innerHTML = `<div class="empty">
+      <div class="e-ico">🚌</div>
+      <h3>No rides found</h3>
+      <p>Try adjusting your filters or add your own ride.</p>
+      <button class="btn btn-primary" style="margin:18px auto 0;display:flex" onclick="openAddRide()">+ Add a Ride</button>
+    </div>`;
+    updateResultsMap([]);
+    return;
+  }
+
+  // Tag cheapest & fastest
+  const minPrice = Math.min(...rides.map(r=>r.price));
+  const earliest = rides.map(r=>r.time).sort()[0];
+
+  list.innerHTML = rides.map((r, i)=>{
+    const isCheapest = r.price===minPrice;
+    const isFastest  = r.time===earliest;
+    const delay      = i*0.06;
+    const col        = COLLEGES[r.to];
+
+    return `<div class="ride-card" style="animation-delay:${delay}s" onclick="openRideDetail(${r.id})">
+      <div class="rc-top">
+        <div class="rc-driver">
+          <div class="rc-avatar">${r.initials}</div>
+          <div>
+            <div class="rc-name">${r.driver}</div>
+            <div class="rc-rating"><span class="star">★</span>${r.rating} · ${r.vehicle==='bike'?'Bike':'Car'}</div>
+          </div>
+        </div>
+        <div style="text-align:right">
+          <div class="rc-price"><sup>₹</sup>${r.price}<small>/seat</small></div>
+          <div class="rc-rating">${r.seats} seat${r.seats>1?'s':''} left</div>
+        </div>
+      </div>
+      <div class="rc-route">
+        <span class="rc-from">📍 ${r.from}</span>
+        <span class="rc-arrow">──────→</span>
+        <span class="rc-to">🎓 ${r.to}</span>
+      </div>
+      <div class="rc-meta">
+        <div class="rc-m">🕐 <b>${r.time}</b></div>
+        <div class="rc-m">💺 <b>${r.seats}/${r.totalSeats}</b> available</div>
+        <div class="rc-m">📍 ${col?Math.round(Math.sqrt(Math.pow((r.lat-col.lat)*111,2)+Math.pow((r.lng-col.lng)*100,2))):'?'}km</div>
+      </div>
+      <div class="rc-badges">
+        <span class="badge ${r.vehicle==='bike'?'b-bike':'b-car'}">${r.vehicle==='bike'?'🏍 Bike':'🚗 Car'}</span>
+        <span class="badge ${r.gender==='female'?'b-female':r.gender==='male'?'b-male':'b-any'}">${r.gender==='female'?'👩 Female Only':r.gender==='male'?'👨 Male Only':'⚥ Any Gender'}</span>
+        ${r.popular?'<span class="badge b-popular">🔥 Popular</span>':''}
+        ${r.recommended?'<span class="badge b-recommended">⭐ Recommended</span>':''}
+        ${isCheapest?'<span class="badge b-cheapest">💚 Cheapest</span>':''}
+        ${isFastest?'<span class="badge b-fastest">⚡ Earliest</span>':''}
+        <span class="badge b-seats">✅ ${r.seats} seat${r.seats>1?'s':''} free</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Animate cards in
+  setTimeout(()=>{
+    list.querySelectorAll('.ride-card').forEach(c=>c.classList.add('in'));
+  }, 50);
+
+  updateResultsMap(rides);
+}
+
+/* ============================================================
+   RIDE DETAIL
+   ============================================================ */
+function openRideDetail(id){
+  const r = RIDES_DATA.find(x=>x.id===id);
+  if(!r) return;
+  state.currentRide = r;
+
+  const col = COLLEGES[r.to];
+  const dist = col ? Math.round(Math.sqrt(Math.pow((r.lat-col.lat)*111,2)+Math.pow((r.lng-col.lng)*100,2))) : '?';
+  const dur  = Math.round(dist * 2.5);
+
+  document.getElementById('detailTitle').textContent = `${r.from} → ${r.to}`;
+  document.getElementById('detailBody').innerHTML = `
+    <div style="padding:0 0 16px">
+      <div class="detail-map-area">
+        <div id="detailMapEl" style="width:100%;height:100%"></div>
+      </div>
+      <div class="detail-driver-row">
+        <div class="detail-av">${r.initials}</div>
+        <div class="detail-driver-info">
+          <h3>${r.driver}</h3>
+          <p>★ ${r.rating} rating · ${r.vehicle==='bike'?'Bike Rider':'Car Driver'} · ${r.gender==='female'?'Female':'Male'}</p>
+        </div>
+        <div style="margin-left:auto;text-align:right">
+          <div style="font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800;color:var(--primary)">₹${r.price}</div>
+          <div style="font-size:0.75rem;color:var(--text-muted)">per seat</div>
+        </div>
+      </div>
+      <div class="detail-stats-row">
+        <div class="d-stat"><div class="n">${r.seats}</div><div class="l">Seats Left</div></div>
+        <div class="d-stat"><div class="n">${dist}km</div><div class="l">Distance</div></div>
+        <div class="d-stat"><div class="n">~${dur}m</div><div class="l">Est. Time</div></div>
+      </div>
+      <div class="route-visual">
+        <div class="rv-row">
+          <div class="rv-dot" style="background:#10B981"></div>
+          <div style="font-size:0.86rem;font-weight:600;color:var(--text)">📍 ${r.from}</div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:10px;padding:6px 0">
+          <div class="rv-line"></div>
+          <div style="font-size:0.76rem;color:var(--text-muted);padding-top:2px">${dur} min drive · ${dist} km</div>
+        </div>
+        <div class="rv-row">
+          <div class="rv-dot" style="background:#6552D0"></div>
+          <div style="font-size:0.86rem;font-weight:600;color:var(--text)">🎓 ${r.to} Campus</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:0.84rem">
+        <div style="padding:12px;background:var(--bg);border-radius:var(--radius)">
+          <div style="color:var(--text-muted);font-size:0.72rem;margin-bottom:4px">DEPARTURE</div>
+          <div style="font-weight:600">🕐 ${r.time}</div>
+        </div>
+        <div style="padding:12px;background:var(--bg);border-radius:var(--radius)">
+          <div style="color:var(--text-muted);font-size:0.72rem;margin-bottom:4px">VEHICLE</div>
+          <div style="font-weight:600">${r.vehicle==='bike'?'🏍 Bike':'🚗 Car'}</div>
+        </div>
+        <div style="padding:12px;background:var(--bg);border-radius:var(--radius)">
+          <div style="color:var(--text-muted);font-size:0.72rem;margin-bottom:4px">CONTACT</div>
+          <div style="font-weight:600">📱 +91 9876XXXXX</div>
+        </div>
+        <div style="padding:12px;background:var(--bg);border-radius:var(--radius)">
+          <div style="color:var(--text-muted);font-size:0.72rem;margin-bottom:4px">GENDER PREF</div>
+          <div style="font-weight:600">${r.gender==='female'?'👩 Female Only':r.gender==='male'?'👨 Male Only':'⚥ Any'}</div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  openModal('detailOverlay');
+
+  setTimeout(()=>{
+    if(!detailMap){
+      detailMap = L.map('detailMapEl',{zoomControl:false,scrollWheelZoom:false,attributionControl:false});
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{maxZoom:18}).addTo(detailMap);
+    } else {
+      detailMap.invalidateSize();
+    }
+
+    const col2 = COLLEGES[r.to];
+    const fromPt = [r.lat, r.lng];
+    const toPt   = col2 ? [col2.lat, col2.lng] : [r.lat+0.03, r.lng+0.03];
+
+    detailMap.fitBounds([fromPt, toPt], {padding:[30,30]});
+    L.polyline([fromPt, toPt],{color:'#6552D0',weight:4,opacity:0.8,dashArray:'8,5'}).addTo(detailMap);
+
+    const startIcon = L.divIcon({html:`<div style="width:14px;height:14px;background:#10B981;border-radius:50%;border:2px solid white;box-shadow:0 2px 8px rgba(16,185,129,0.6)"></div>`,iconAnchor:[7,7],className:''});
+    const endIcon   = L.divIcon({html:`<div style="width:14px;height:14px;background:#6552D0;border-radius:50%;border:2px solid white;box-shadow:0 2px 8px rgba(101,82,208,0.6)"></div>`,iconAnchor:[7,7],className:''});
+
+    L.marker(fromPt,{icon:startIcon}).addTo(detailMap).bindTooltip(r.from,{permanent:true,direction:'top',offset:[0,-10]});
+    L.marker(toPt,  {icon:endIcon  }).addTo(detailMap).bindTooltip(r.to,  {permanent:true,direction:'top',offset:[0,-10]});
+  }, 300);
+}
+
+function bookRide(){
+  if(!state.currentRide) return;
+  closeModal('detailOverlay');
+  setTimeout(()=>{
+    showToast(`🎉 Ride booked with ${state.currentRide.driver}!`, 'ok');
+    // Update seats
+    const r = RIDES_DATA.find(x=>x.id===state.currentRide.id);
+    if(r && r.seats>0) r.seats--;
+    renderRides();
+  }, 400);
+}
+
+/* ============================================================
+   ADD RIDE MODAL — STEPS
+   ============================================================ */
+function openAddRide(){
+  state.currentStep = 1;
+  renderStep(1);
+  openModal('addRideOverlay');
+}
+
+function renderStep(n){
+  for(let i=1;i<=5;i++){
+    document.getElementById('sc'+i).classList.toggle('act',i===n);
+    const dot = document.getElementById('sd'+i);
+    dot.classList.remove('act','done');
+    if(i<n) dot.classList.add('done'), dot.textContent='✓';
+    else if(i===n) dot.classList.add('act'), dot.textContent=i;
+    else dot.textContent=i;
+    if(i<5){
+      document.getElementById('sl'+i).classList.toggle('done',i<n);
+    }
+  }
+  document.getElementById('stepBack').style.display = n>1?'':'none';
+  document.getElementById('stepNext').textContent = n===5?'🚀 Publish Ride':'Next →';
+  document.getElementById('stepNext').className = 'btn '+(n===5?'btn-success':'btn-primary');
+
+  if(n===5) buildSummary();
+}
+
+function stepNav(dir){
+  const n = state.currentStep + dir;
+  if(n<1||n>5) return;
+  if(dir>0 && !validateStep(state.currentStep)) return;
+  state.currentStep = n;
+  renderStep(n);
+}
+
+function validateStep(n){
+  if(n===2){
+    if(!document.getElementById('addFrom').value.trim()){ showToast('Enter a pickup address','err'); return false; }
+    if(!document.getElementById('addCollege').value){ showToast('Select a college','err'); return false; }
+  }
+  if(n===3){
+    if(!document.getElementById('addDate').value){ showToast('Pick a date','err'); return false; }
+    if(!document.getElementById('addPrice').value){ showToast('Enter price per seat','err'); return false; }
+  }
+  if(n===4){
+    if(!document.getElementById('addName').value.trim()){ showToast('Enter your name','err'); return false; }
+    if(!document.getElementById('addPhone').value.trim()){ showToast('Enter contact number','err'); return false; }
+  }
+  if(n===5){
+    submitRide();
+    return false; // Handled separately
+  }
+  return true;
+}
+
+function submitRide(){
+  closeModal('addRideOverlay');
+  setTimeout(()=>showToast('🚀 Your ride has been published!','ok'), 400);
+}
+
+function buildSummary(){
+  const from   = document.getElementById('addFrom').value || '—';
+  const to     = document.getElementById('addCollege').value || '—';
+  const date   = document.getElementById('addDate').value || '—';
+  const time   = document.getElementById('addTime').value || '—';
+  const seats  = document.getElementById('addSeats').value || '—';
+  const price  = document.getElementById('addPrice').value || '—';
+  const name   = document.getElementById('addName').value || '—';
+  const phone  = document.getElementById('addPhone').value || '—';
+
+  document.getElementById('rideSummary').innerHTML = `
+    <div class="sum-row"><span class="sum-lbl">Vehicle</span><span class="sum-val">${state.formData.vehicle==='bike'?'🏍 Bike':'🚗 Car'}</span></div>
+    <div class="sum-row"><span class="sum-lbl">From</span><span class="sum-val">📍 ${from}</span></div>
+    <div class="sum-row"><span class="sum-lbl">To</span><span class="sum-val">🎓 ${to}</span></div>
+    <div class="sum-row"><span class="sum-lbl">Date & Time</span><span class="sum-val">${date} at ${time}</span></div>
+    <div class="sum-row"><span class="sum-lbl">Seats</span><span class="sum-val">💺 ${seats} available</span></div>
+    <div class="sum-row sum-highlight"><span class="sum-lbl">Price/Seat</span><span class="sum-val">₹${price}</span></div>
+    <div class="sum-row"><span class="sum-lbl">Your Name</span><span class="sum-val">${name}</span></div>
+    <div class="sum-row"><span class="sum-lbl">Contact</span><span class="sum-val">${phone}</span></div>
+    <div class="sum-row"><span class="sum-lbl">Gender</span><span class="sum-val">${state.formData.gender==='female'?'👩 Female':'👨 Male'}</span></div>
+  `;
+}
+
+function selectVehicle(v){
+  state.formData.vehicle = v;
+  document.getElementById('vBike').classList.toggle('sel',v==='bike');
+  document.getElementById('vCar').classList.toggle('sel',v==='car');
+}
+function selGender(g){
+  state.formData.gender = g;
+  document.getElementById('gMale').classList.toggle('sel',g==='male');
+  document.getElementById('gFemale').classList.toggle('sel',g==='female');
+}
+
+/* ============================================================
+   MODAL HELPERS
+   ============================================================ */
+function openModal(id){
+  document.getElementById(id).classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeModal(id){
+  document.getElementById(id).classList.remove('open');
+  document.body.style.overflow='';
+}
+// Close on overlay click
+document.querySelectorAll('.overlay').forEach(o=>{
+  o.addEventListener('click',e=>{ if(e.target===o) closeModal(o.id); });
+});
+
+/* ============================================================
+   SCROLL & REVEAL - Enhanced Observer
+   ============================================================ */
+// Main reveal observer
+const revealObserver = new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      e.target.classList.add('vis');
+      // Add parallax effect for certain elements
+      if(e.target.classList.contains('feat-card')){
+        e.target.style.transform = 'translateY(0) scale(1)';
+      }
+    }
+  });
+},{threshold:0.12,rootMargin:'0px 0px -50px 0px'});
+
+// Observe all reveal elements
+document.querySelectorAll('.reveal,.reveal-left,.reveal-right,.reveal-scale,.reveal-blur').forEach(el=>{
+  revealObserver.observe(el);
+});
+
+// Nav scroll with smooth hide/show
+let lastScroll = 0;
+window.addEventListener('scroll',()=>{
+  const currentScroll = window.scrollY;
+  const nav = document.getElementById('mainNav');
+  
+  // Add/remove scrolled class
+  nav.classList.toggle('scrolled', currentScroll>50);
+  
+  lastScroll = currentScroll;
+});
+
+// Parallax effect for hero background
+window.addEventListener('scroll',()=>{
+  const scrolled = window.scrollY;
+  const heroBg = document.querySelector('.hero-bg');
+  if(heroBg && scrolled < window.innerHeight){
+    heroBg.style.transform = `translateY(${scrolled * 0.3}px)`;
+  }
+});
+
+// Lazy-init maps on scroll
+const sectionObserver = new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      if(e.target.id==='hero') initHeroMap();
+      if(e.target.id==='search-section') initHeroSearchMap();
+    }
+  });
+},{threshold:0.15});
+document.querySelectorAll('#hero,#search-section').forEach(el=>sectionObserver.observe(el));
+
+/* ============================================================
+   ANIMATED COUNTERS
+   ============================================================ */
+function animateCounters(){
+  document.querySelectorAll('[data-count]').forEach(el=>{
+    const target = +el.dataset.count;
+    const prefix = el.dataset.prefix || '';
+    const suffix = el.dataset.suffix || '';
+    let current = 0;
+    const step = target/60;
+    const timer = setInterval(()=>{
+      current = Math.min(current+step, target);
+      el.textContent = prefix + Math.round(current).toLocaleString() + suffix;
+      if(current>=target) clearInterval(timer);
+    }, 22);
+  });
+}
+const heroObs = new IntersectionObserver(entries=>{
+  if(entries[0].isIntersecting){ animateCounters(); heroObs.disconnect(); }
+},{threshold:0.4});
+heroObs.observe(document.getElementById('hero'));
+
+/* ============================================================
+   INIT
+   ============================================================ */
+// Pre-select default chip
+document.getElementById('qAll').classList.add('on');
+
+// Set default date
+const today = new Date();
+document.getElementById('addDate').value = today.toISOString().split('T')[0];
+</script>
+</body>
+</html>
